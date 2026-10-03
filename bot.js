@@ -1,5 +1,6 @@
 require("dotenv").config();
-const { Bot, InlineKeyboard } = require("grammy");
+const { Bot, InlineKeyboard, InputFile } = require("grammy");
+const fs = require("fs");
 const engine = require("./lib/engine");
 
 const token = process.env.BOT_TOKEN;
@@ -92,22 +93,45 @@ bot.on("message:text", async (ctx) => {
     return;
   }
 
-  // Khusus YouTube: Tampilkan pilihan format MP4 / MP3
-  if (platform.hasFormat) {
-    const stateId = engine.saveState({
-      url: rawUrl,
-      platformId: platform.id,
-      chatId: ctx.chat.id,
-    });
-
-    const kb = new InlineKeyboard()
-      .text("📹 Video (720p)", `fmt:${stateId}:mp4`)
-      .text("🎵 Audio (MP3)", `fmt:${stateId}:mp3`);
-
-    await ctx.reply(
-      `🎯 *${platform.label} Terdeteksi!*\n\nLink: \`${rawUrl}\`\nPilih format yang ingin diunduh:`,
-      { reply_markup: kb, parse_mode: "Markdown" }
+  // Khusus YouTube: Langsung proses unduh video dan kirim tanpa perlu klik tombol
+  if (platform.id === "youtube") {
+    const statusMsg = await ctx.reply(
+      `⏳ Sedang mengunduh video *${platform.label}*... Mohon tunggu sebentar.`,
+      { parse_mode: "Markdown" }
     );
+
+    try {
+      const result = await engine.downloadYouTubeVideo(rawUrl);
+      await ctx.api.editMessageText(
+        ctx.chat.id,
+        statusMsg.message_id,
+        `⬇️ Mengirim video: *${engine.escapeHtml(result.title)}*...`,
+        { parse_mode: "Markdown" }
+      );
+
+      await ctx.replyWithVideo(new InputFile(result.filePath), {
+        caption: `▶️ ${result.title}`,
+        supports_streaming: true,
+      });
+
+      try { fs.unlinkSync(result.filePath); } catch {}
+      try { await ctx.api.deleteMessage(ctx.chat.id, statusMsg.message_id); } catch {}
+    } catch (err) {
+      console.error("YouTube download error:", err.message);
+      const videoMatch = rawUrl.match(/(?:v=|youtu\.be\/)([^&?\s]{11})/i);
+      const videoId = videoMatch ? videoMatch[1] : "";
+      const fallbackKb = new InlineKeyboard()
+        .url("🌐 Download via Y2Mate", `https://www.y2mate.com/youtube/${videoId}`)
+        .row()
+        .url("⚡ Download via Cobalt", `https://cobalt.tools`);
+
+      await ctx.api.editMessageText(
+        ctx.chat.id,
+        statusMsg.message_id,
+        `⚠️ Gagal mengirim video langsung (${err.message}).\n\nKamu bisa mengunduh lewat tombol di bawah:`,
+        { reply_markup: fallbackKb }
+      );
+    }
     return;
   }
 

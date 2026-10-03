@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "start": "node bot.js",
-    "test": "node test/self-check.js"
+    "test": "node test/self-check.js",
+    "postinstall": "chmod +x bin/yt-dlp 2>/dev/null || (mkdir -p bin && curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o bin/yt-dlp && chmod +x bin/yt-dlp)"
   },
   "dependencies": {
     "@distube/ytdl-core": "^4.16.12",
