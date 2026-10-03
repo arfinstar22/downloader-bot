@@ -1,0 +1,14 @@
+{
+  "name": "tg-downloader-bot",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "node bot.js",
+    "test": "node test/self-check.js"
+  },
+  "dependencies": {
+    "grammy": "^1.35.0",
+    "dotenv": "^16.4.0",
+    "axios": "^1.7.0"
+  }
+}
