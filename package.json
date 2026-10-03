@@ -7,9 +7,11 @@
     "test": "node test/self-check.js"
   },
   "dependencies": {
-    "grammy": "^1.35.0",
-    "dotenv": "^16.4.0",
+    "@distube/ytdl-core": "^4.16.12",
     "axios": "^1.7.0",
-    "cheerio": "^1.0.0"
+    "cheerio": "^1.0.0",
+    "dotenv": "^16.4.0",
+    "grammy": "^1.35.0",
+    "youtubei.js": "^18.1.0"
   }
 }

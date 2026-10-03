@@ -201,10 +201,19 @@ bot.on("callback_query:data", async (ctx) => {
     try {
       const res = await engine.scrapeMedia(platform, state.url, { format });
       if (!res || !res.status || !res.result) {
+        const videoMatch = state.url.match(/(?:v=|youtu\.be\/)([^&?\s]{11})/i);
+        const videoId = videoMatch ? videoMatch[1] : "";
+        const fallbackKb = new InlineKeyboard()
+          .url("🌐 Download via Y2Mate", `https://www.y2mate.com/youtube/${videoId}`)
+          .row()
+          .url("⚡ Download via Cobalt", `https://cobalt.tools`);
+
         await ctx.editMessageText(
-          `❌ Gagal memproses YouTube: ${
-            res?.message || "Format tidak tersedia atau server scraper sibuk."
-          }`
+          `⚠️ *Server Cloud Diblokir oleh Converter YouTube*\n\n` +
+          `Server cloud Render (AWS) terdeteksi dan diblokir oleh anti-bot pihak ketiga converter YouTube.\n\n` +
+          `👉 *Gunakan tombol di bawah untuk langsung download video ini di browser:*\n\n` +
+          `💡 *Info:* 16 platform lain (*TikTok, Instagram Reels, Twitter/X, Spotify*, dll) tidak diblokir dan langsung mengirimkan file video/audio ke chat. Silakan dicoba!`,
+          { reply_markup: fallbackKb, parse_mode: "Markdown" }
         );
         engine.deleteState(stateId);
         return;
