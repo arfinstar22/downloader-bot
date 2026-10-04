@@ -85,7 +85,7 @@ body::before {
   pointer-events: none;
 }
 
-/* ── Layer 2: Precision Dot Matrix Mesh with Radial Fade (ibelick style) ── */
+/* ── Layer 2: Lightweight Dot Matrix Mesh ── */
 body::after {
   content: "";
   position: fixed;
@@ -94,10 +94,9 @@ body::after {
   right: 0;
   bottom: 0;
   z-index: -1;
-  background-image: radial-gradient(rgba(56, 189, 248, 0.12) 1px, transparent 1px);
+  background-image: radial-gradient(rgba(56, 189, 248, 0.08) 1px, transparent 1px);
   background-size: 24px 24px;
-  mask-image: radial-gradient(ellipse 95% 75% at 50% 30%, black 25%, transparent 85%);
-  -webkit-mask-image: radial-gradient(ellipse 95% 75% at 50% 30%, black 25%, transparent 85%);
+  opacity: 0.65;
   pointer-events: none;
 }
 

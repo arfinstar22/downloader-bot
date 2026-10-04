@@ -1,13 +1,19 @@
 (() => {
   const tg = window.Telegram?.WebApp;
 
-  // Initialize Telegram WebApp
+  // Safe initialize Telegram WebApp (prevents crash on desktop WebView2)
   if (tg) {
-    tg.ready();
-    tg.expand();
-    if (tg.enableClosingConfirmation) {
-      tg.enableClosingConfirmation();
-    }
+    try {
+      if (typeof tg.ready === "function") tg.ready();
+    } catch (_) {}
+    try {
+      if (typeof tg.expand === "function") tg.expand();
+    } catch (_) {}
+    try {
+      if (typeof tg.enableClosingConfirmation === "function") {
+        tg.enableClosingConfirmation();
+      }
+    } catch (_) {}
   }
 
   // DOM Elements
@@ -478,25 +484,26 @@
     btnDownload.disabled = false;
   });
 
-  // Interactive Pointer / Touch Spotlight (ibelick/ui-skills)
+  // Interactive Pointer Spotlight (rAF throttled)
   const mainCard = document.querySelector(".main-card");
   if (mainCard) {
+    let ticking = false;
     const updateSpotlight = (clientX, clientY) => {
-      const rect = mainCard.getBoundingClientRect();
-      const x = clientX - rect.left;
-      const y = clientY - rect.top;
-      mainCard.style.setProperty("--mouse-x", `${x}px`);
-      mainCard.style.setProperty("--mouse-y", `${y}px`);
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          const rect = mainCard.getBoundingClientRect();
+          const x = clientX - rect.left;
+          const y = clientY - rect.top;
+          mainCard.style.setProperty("--mouse-x", `${x}px`);
+          mainCard.style.setProperty("--mouse-y", `${y}px`);
+          ticking = false;
+        });
+        ticking = true;
+      }
     };
 
     mainCard.addEventListener("pointermove", (e) => {
       updateSpotlight(e.clientX, e.clientY);
-    }, { passive: true });
-
-    mainCard.addEventListener("touchmove", (e) => {
-      if (e.touches && e.touches[0]) {
-        updateSpotlight(e.touches[0].clientX, e.touches[0].clientY);
-      }
     }, { passive: true });
   }
 
