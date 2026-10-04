@@ -25,6 +25,9 @@ const snapchat = require("./lib/snapchat");
 const sfile = require("./lib/sfile");
 const deezer = require("./lib/deezer");
 const audiomack = require("./lib/audiomack");
+const likee = require("./lib/likee");
+const loom = require("./lib/loom");
+const tidal = require("./lib/tidal");
 
 module.exports = {
   bilibili,
@@ -54,4 +57,8 @@ module.exports = {
   sfile,
   deezer,
   audiomack,
+  likee,
+  loom,
+  tidal,
 };
+

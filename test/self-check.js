@@ -23,6 +23,9 @@ const testUrls = [
   { url: "https://sfile.mobi/test1234", expectedId: "sfile" },
   { url: "https://www.deezer.com/track/3135556", expectedId: "deezer" },
   { url: "https://audiomack.com/artist/song/track", expectedId: "audiomack" },
+  { url: "https://likee.video/@user/video/7093444807096327263", expectedId: "likee" },
+  { url: "https://www.loom.com/share/d48006b5275a4fc487e47e305e557fc9", expectedId: "loom" },
+  { url: "https://tidal.com/browse/track/74695970", expectedId: "tidal" },
 ];
 
 for (const { url, expectedId } of testUrls) {
