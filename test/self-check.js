@@ -12,6 +12,7 @@ const testUrls = [
   { url: "https://x.com/jack/status/20", expectedId: "twitter" },
   { url: "https://open.spotify.com/track/4cOdK2wGLETKBW3PvgPWqT", expectedId: "spotify" },
   { url: "https://www.facebook.com/watch/?v=10153231379946729", expectedId: "facebook" },
+  { url: "https://music.apple.com/us/song/happier/1560735557", expectedId: "applemusic" },
 ];
 
 for (const { url, expectedId } of testUrls) {
@@ -19,7 +20,7 @@ for (const { url, expectedId } of testUrls) {
   assert.ok(p, `Platform must be detected for ${url}`);
   assert.strictEqual(p.id, expectedId, `Expected ${expectedId}, got ${p.id}`);
 }
-console.log("✓ Platform detection tests passed (7/7)");
+console.log("✓ Platform detection tests passed (8/8)");
 
 // 2. State Store
 const id = engine.saveState({ foo: "bar" });
