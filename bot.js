@@ -46,23 +46,40 @@ bot.command("start", async (ctx) => {
     await ctx.setChatMenuButton({ type: "default" });
   } catch (_) {}
 
-  const text =
-    `👋 *Halo, ${engine.escapeHtml(ctx.from?.first_name || "Sobat")}!*\n\n` +
-    `Saya adalah bot pengunduh media serbaguna (*Universal Media Downloader*).\n\n` +
-    `⚡ *Cara Pakai:*\n` +
-    `• Klik tombol *📱 Buka Downloader Mini App* di keyboard bawah untuk tampilan aplikasi web interaktif!\n` +
-    `• Atau cukup kirimkan link video/audio langsung ke chat ini.\n\n` +
-    `📌 *Fitur:*\n` +
-    `• Langsung kirim file video/audio ke chat Telegram\n` +
-    `• Dukungan 17 platform media sosial\n` +
-    `• Pilihan format video & audio (MP4 / MP3)\n` +
-    `• Instant re-send via File ID Cache\n\n` +
-    `Klik tombol menu di bawah untuk mulai!`;
+  const name = engine.escapeHtml(ctx.from?.first_name || "Sobat");
 
-  await ctx.reply(text, {
-    parse_mode: "Markdown",
-    reply_markup: getBottomKeyboard(ctx.chat.id),
-  });
+  // Pesan 1 — sambutan personal
+  await ctx.reply(
+    `👋 Halo, *${name}!*\n\nSelamat datang di *Darfin Downloader* — bot pengunduh media serba bisa yang bisa langsung mengirim file ke chat kamu. 🎉`,
+    { parse_mode: "Markdown" }
+  );
+
+  // Pesan 2 — fitur unggulan
+  await ctx.reply(
+    `⚡ *Apa yang bisa aku lakukan?*\n\n` +
+    `🎬  Unduh video & audio dari *17 platform* sekaligus:\n` +
+    `    YouTube · TikTok · Instagram · Twitter/X\n` +
+    `    Spotify · Facebook · Pinterest · Reddit\n` +
+    `    SoundCloud · Apple Music · dan lainnya\n\n` +
+    `📤  File dikirim *langsung ke chat ini* — tidak perlu buka link eksternal\n` +
+    `🚀  Re-send instan via cache jika link pernah diunduh sebelumnya\n` +
+    `📦  Jika ukuran >48MB, bot otomatis kirim tombol *Download Langsung*`,
+    { parse_mode: "Markdown" }
+  );
+
+  // Pesan 3 — cara pakai + CTA keyboard
+  await ctx.reply(
+    `🛠️ *Cara Pakai:*\n\n` +
+    `1️⃣  Buka *📱 Mini App* lewat tombol di bawah — tampilan web interaktif\n` +
+    `2️⃣  Atau langsung *tempel link* video/audio ke chat ini\n` +
+    `3️⃣  Pilih format *Video (MP4)* atau *Audio (MP3)*\n` +
+    `4️⃣  Bot akan langsung mengunduh & mengirim file ke kamu ✅\n\n` +
+    `Yuk mulai unduhan pertamamu! 👇`,
+    {
+      parse_mode: "Markdown",
+      reply_markup: getBottomKeyboard(ctx.chat.id),
+    }
+  );
 });
 
 bot.command(["app", "miniapp"], async (ctx) => {
