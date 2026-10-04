@@ -1,16 +1,22 @@
 (() => {
   const tg = window.Telegram?.WebApp;
 
-  // Safe initialize Telegram WebApp (prevents crash on desktop WebView2)
+  // Safe initialize Telegram WebApp
   if (tg) {
     try {
       if (typeof tg.ready === "function") tg.ready();
     } catch (_) {}
     try {
-      if (typeof tg.expand === "function") tg.expand();
+      const platform = (tg.platform || "").toLowerCase();
+      const isDesktop = platform === "tdesktop" || platform === "macos" || platform === "weba" || platform === "webk" || platform === "web";
+      // Only expand on mobile devices. Desktop Telegram has fixed window and expand() triggers frameless window bugs.
+      if (!isDesktop && typeof tg.expand === "function") {
+        tg.expand();
+      }
     } catch (_) {}
     try {
-      if (typeof tg.enableClosingConfirmation === "function") {
+      const platform = (tg.platform || "").toLowerCase();
+      if (platform !== "tdesktop" && typeof tg.enableClosingConfirmation === "function") {
         tg.enableClosingConfirmation();
       }
     } catch (_) {}
@@ -469,14 +475,25 @@
     urlInput.focus();
   });
 
-  // Close Mini App
-  btnCloseApp.addEventListener("click", () => {
-    if (tg?.close) {
-      tg.close();
-    } else {
+  // Close Mini App (Result button & Header close button)
+  const closeApp = () => {
+    try {
+      if (tg?.close) {
+        tg.close();
+      } else {
+        window.close();
+      }
+    } catch (_) {
       window.close();
     }
-  });
+  };
+
+  btnCloseApp.addEventListener("click", closeApp);
+
+  const btnCloseHeader = document.getElementById("btnCloseHeader");
+  if (btnCloseHeader) {
+    btnCloseHeader.addEventListener("click", closeApp);
+  }
 
   // Retry Button
   btnRetry.addEventListener("click", () => {

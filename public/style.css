@@ -52,20 +52,41 @@ img, svg, video {
   outline-offset: 2px;
 }
 
+html {
+  height: 100%;
+}
+
 body {
   font-family: var(--font-family);
   background-color: var(--bg-color);
   color: var(--text-color);
   line-height: 1.5;
   font-size: 15px;
-  min-height: 100vh;
+  min-height: 100%;
   display: flex;
   flex-direction: column;
   padding: env(safe-area-inset-top, 16px) 16px env(safe-area-inset-bottom, 24px) 16px;
   overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(56, 189, 248, 0.3) transparent;
   position: relative;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(56, 189, 248, 0.22);
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(56, 189, 248, 0.45);
 }
 
 /* ── Layer 1: Ambient Brand Lighting (Restrained & Deep) ── */
@@ -181,6 +202,12 @@ body::after {
   text-wrap: pretty;
 }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .user-pill {
   display: flex;
   align-items: center;
@@ -200,6 +227,33 @@ body::after {
 
 .user-pill:active {
   transform: scale(0.96);
+}
+
+.btn-close-header {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  color: #94A3B8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast), background var(--transition-fast);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.btn-close-header:hover {
+  color: #FFFFFF;
+  border-color: rgba(239, 68, 68, 0.5);
+  background: rgba(239, 68, 68, 0.15);
+  transform: scale(1.05);
+}
+
+.btn-close-header:active {
+  transform: scale(0.92);
 }
 
 .user-dot {
@@ -788,18 +842,18 @@ body::after {
 .platform-grid {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 6px;
 }
 
 .platform-badge {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 7px 12px;
+  gap: 6px;
+  padding: 6px 10px;
   background: rgba(15, 23, 42, 0.72);
   border: 1px solid rgba(56, 189, 248, 0.14);
-  border-radius: 11px;
-  font-size: 12.5px;
+  border-radius: 10px;
+  font-size: 11.5px;
   font-weight: 600;
   color: #CBD5E1;
   backdrop-filter: blur(10px);
@@ -841,8 +895,8 @@ body::after {
 }
 
 .p-icon {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   object-fit: contain;
   flex-shrink: 0;
   display: block;

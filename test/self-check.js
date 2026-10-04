@@ -66,3 +66,4 @@ assert.strictEqual(engine.mediaType({ type: "image" }), "photo");
 console.log("✓ mediaType helper tests passed");
 
 console.log("All self-check tests passed successfully!");
+process.exit(0);
