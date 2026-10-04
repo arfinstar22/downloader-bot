@@ -18,6 +18,11 @@ if (!token || token.includes("your_telegram_bot_token_here")) {
 
 const bot = new Bot(token);
 
+const WEBAPP_URL =
+  process.env.WEBAPP_URL ||
+  process.env.RENDER_EXTERNAL_URL ||
+  "https://downloader-bot-elsw.onrender.com";
+
 // ── Commands ──
 
 bot.command("start", async (ctx) => {
@@ -25,15 +30,28 @@ bot.command("start", async (ctx) => {
     `👋 *Halo, ${engine.escapeHtml(ctx.from?.first_name || "Sobat")}!*\n\n` +
     `Saya adalah bot pengunduh media serbaguna (Universal Media Downloader).\n\n` +
     `⚡ *Cara Pakai:*\n` +
-    `Cukup kirimkan link video/audio langsung ke chat ini. Saya akan mengunduh dan mengirimkan filenya langsung ke kamu!\n\n` +
+    `• Kirimkan link video/audio langsung ke chat ini, atau\n` +
+    `• Klik tombol *Buka Mini App* di bawah untuk tampilan web yang praktis!\n\n` +
     `📌 *Fitur:*\n` +
     `• Langsung kirim file video/audio (bukan cuma link)\n` +
     `• Dukungan 17 platform media sosial\n` +
-    `• Pilihan kualitas video & audio (MP4 / MP3)\n` +
-    `• Instant re-send via File ID Cache\n\n` +
+    `• Telegram Mini App modern & interaktif\n` +
+    `• Pilihan format video & audio (MP4 / MP3)\n\n` +
     `Ketik /platforms untuk melihat daftar platform yang didukung.`;
 
-  await ctx.reply(text, { parse_mode: "Markdown" });
+  const kb = new InlineKeyboard()
+    .webApp("🚀 Buka Downloader Mini App", WEBAPP_URL)
+    .row()
+    .url("🌐 GitHub Repository", "https://github.com/arfinstar22/downloader-bot");
+
+  await ctx.reply(text, { parse_mode: "Markdown", reply_markup: kb });
+});
+
+bot.command(["app", "miniapp"], async (ctx) => {
+  const kb = new InlineKeyboard().webApp("🚀 Buka Downloader Mini App", WEBAPP_URL);
+  await ctx.reply("Klik tombol di bawah untuk membuka Telegram Mini App:", {
+    reply_markup: kb,
+  });
 });
 
 bot.command("help", async (ctx) => {
@@ -279,24 +297,219 @@ bot.catch((err) => {
   console.error("Telegram Bot Unhandled Error:", err);
 });
 
-// ── HTTP Health Check (Render / PaaS Keepalive) ──
+// ── Telegram Mini App Data Handler ──
+
+bot.on("message:web_app_data", async (ctx) => {
+  try {
+    const data = JSON.parse(ctx.message.web_app_data.data);
+    if (data.url) {
+      ctx.message.text = data.url;
+    }
+  } catch (err) {
+    console.error("web_app_data error:", err);
+  }
+});
+
+// ── HTTP Server (Mini App + API + Health Check) ──
 
 const http = require("http");
+const path = require("path");
 const PORT = process.env.PORT || 3000;
+const PUBLIC_DIR = path.join(__dirname, "public");
 
-http.createServer((req, res) => {
-  res.writeHead(200, { "Content-Type": "application/json" });
-  res.end(JSON.stringify({ status: "ok", uptime: process.uptime() }));
-}).listen(PORT, () => {
-  console.log(`🌐 Health check server aktif di port ${PORT}`);
-});
+function serveFile(res, filePath, contentType) {
+  fs.readFile(filePath, (err, content) => {
+    if (err) {
+      res.writeHead(404, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: "Not Found" }));
+    } else {
+      res.writeHead(200, {
+        "Content-Type": contentType,
+        "Cache-Control": "public, max-age=3600",
+      });
+      res.end(content);
+    }
+  });
+}
+
+function parseJsonBody(req) {
+  return new Promise((resolve, reject) => {
+    let body = "";
+    req.on("data", (chunk) => {
+      body += chunk.toString();
+      if (body.length > 1e6) {
+        req.destroy();
+        reject(new Error("Payload too large"));
+      }
+    });
+    req.on("end", () => {
+      try {
+        resolve(body ? JSON.parse(body) : {});
+      } catch (e) {
+        reject(new Error("Invalid JSON"));
+      }
+    });
+    req.on("error", reject);
+  });
+}
+
+http
+  .createServer(async (req, res) => {
+    // CORS headers
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+
+    if (req.method === "OPTIONS") {
+      res.writeHead(204);
+      return res.end();
+    }
+
+    const parsedUrl = new URL(req.url, `http://${req.headers.host}`);
+    const pathname = parsedUrl.pathname;
+
+    // Health check
+    if (pathname === "/health") {
+      res.writeHead(200, { "Content-Type": "application/json" });
+      return res.end(JSON.stringify({ status: "ok", uptime: process.uptime() }));
+    }
+
+    // Mini App static assets
+    if (req.method === "GET") {
+      if (pathname === "/" || pathname === "/index.html") {
+        return serveFile(res, path.join(PUBLIC_DIR, "index.html"), "text/html; charset=utf-8");
+      }
+      if (pathname === "/style.css") {
+        return serveFile(res, path.join(PUBLIC_DIR, "style.css"), "text/css; charset=utf-8");
+      }
+      if (pathname === "/app.js") {
+        return serveFile(res, path.join(PUBLIC_DIR, "app.js"), "application/javascript; charset=utf-8");
+      }
+    }
+
+    // API: Download & send media to user chat
+    if (req.method === "POST" && pathname === "/api/download") {
+      try {
+        const body = await parseJsonBody(req);
+        const { url: rawUrl, format = "mp4", userId, initData } = body;
+
+        if (!rawUrl) {
+          res.writeHead(400, { "Content-Type": "application/json" });
+          return res.end(JSON.stringify({ success: false, message: "URL wajib diisi." }));
+        }
+
+        // Determine destination chat ID
+        let chatId = userId || null;
+        if (!chatId && initData) {
+          try {
+            const params = new URLSearchParams(initData);
+            const userStr = params.get("user");
+            if (userStr) {
+              const u = JSON.parse(userStr);
+              if (u.id) chatId = u.id;
+            }
+          } catch {}
+        }
+
+        const platform = engine.detectPlatform(rawUrl);
+        if (!platform) {
+          res.writeHead(400, { "Content-Type": "application/json" });
+          return res.end(
+            JSON.stringify({
+              success: false,
+              message: "Platform link tidak didukung atau format link salah.",
+            })
+          );
+        }
+
+        // Process YouTube
+        if (platform.id === "youtube") {
+          const result = await engine.downloadYouTubeVideo(rawUrl);
+          if (chatId) {
+            if (format === "mp3") {
+              await bot.api.sendAudio(chatId, new InputFile(result.filePath), {
+                caption: `🎵 ${result.title}`,
+                title: result.title,
+              });
+            } else {
+              await bot.api.sendVideo(chatId, new InputFile(result.filePath), {
+                caption: `▶️ ${result.title}`,
+                supports_streaming: true,
+              });
+            }
+            try { fs.unlinkSync(result.filePath); } catch {}
+          }
+
+          res.writeHead(200, { "Content-Type": "application/json" });
+          return res.end(JSON.stringify({ success: true, title: result.title, platform: platform.label }));
+        }
+
+        // Process Other Platforms
+        const scrapeRes = await engine.scrapeMedia(platform, rawUrl, { format });
+        if (!scrapeRes || !scrapeRes.status || !scrapeRes.result) {
+          res.writeHead(400, { "Content-Type": "application/json" });
+          return res.end(
+            JSON.stringify({
+              success: false,
+              message: scrapeRes?.message || `Gagal mengambil media dari ${platform.label}.`,
+            })
+          );
+        }
+
+        const title = scrapeRes.result.title || platform.label;
+        const downloads = engine.getDownloads(scrapeRes.result);
+        if (downloads.length === 0) {
+          res.writeHead(400, { "Content-Type": "application/json" });
+          return res.end(JSON.stringify({ success: false, message: "Media stream tidak ditemukan." }));
+        }
+
+        if (chatId) {
+          const fakeCtx = {
+            chat: { id: chatId },
+            api: bot.api,
+            replyWithVideo: (f, o) => bot.api.sendVideo(chatId, f, o),
+            replyWithAudio: (f, o) => bot.api.sendAudio(chatId, f, o),
+            replyWithPhoto: (f, o) => bot.api.sendPhoto(chatId, f, o),
+            reply: (t, o) => bot.api.sendMessage(chatId, t, o),
+          };
+          await engine.sendMedia(fakeCtx, downloads[0], title);
+        }
+
+        res.writeHead(200, { "Content-Type": "application/json" });
+        return res.end(JSON.stringify({ success: true, title, platform: platform.label }));
+      } catch (err) {
+        console.error("API download error:", err.message);
+        res.writeHead(500, { "Content-Type": "application/json" });
+        return res.end(JSON.stringify({ success: false, message: err.message }));
+      }
+    }
+
+    // 404 Fallback
+    res.writeHead(404, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ error: "Route not found" }));
+  })
+  .listen(PORT, () => {
+    console.log(`🌐 Server aktif di port ${PORT} (Mini App & API ready)`);
+  });
 
 // ── Start Bot ──
 
 console.log("Menghubungkan bot ke Telegram...");
 bot.start({
-  onStart: (info) => {
+  onStart: async (info) => {
     console.log(`✅ Bot @${info.username} berhasil berjalan!`);
-  }
+    try {
+      await bot.api.setChatMenuButton({
+        menu_button: {
+          type: "web_app",
+          text: "⚡ Downloader",
+          web_app: { url: WEBAPP_URL },
+        },
+      });
+      console.log(`📱 Telegram Chat Menu Button diatur ke: ${WEBAPP_URL}`);
+    } catch (err) {
+      console.warn("Notice: setChatMenuButton error:", err.message);
+    }
+  },
 });
 

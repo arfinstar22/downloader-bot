@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Darfin Downloader - Mini App</title>
+  
+  <!-- Telegram WebApp SDK -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+  <!-- Google Fonts Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="brand">
+        <div class="brand-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <h1>Darfin Downloader</h1>
+          <p class="subtitle">Universal Media Downloader</p>
+        </div>
+      </div>
+      <div class="user-pill" id="userPill">
+        <span class="user-dot"></span>
+        <span class="user-name" id="userName">User</span>
+      </div>
+    </header>
+
+    <!-- Main Card -->
+    <main class="main-card">
+      <div class="input-section">
+        <label for="urlInput" class="input-label">Tempel Link Media</label>
+        <div class="input-wrapper" id="inputWrapper">
+          <input 
+            type="url" 
+            id="urlInput" 
+            class="url-input" 
+            placeholder="https://..." 
+            autocomplete="off" 
+            spellcheck="false"
+            required
+          >
+          <div class="input-actions">
+            <button type="button" class="btn-clear" id="btnClear" aria-label="Hapus URL" style="display: none;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+            <button type="button" class="btn-paste" id="btnPaste" aria-label="Tempel link dari clipboard">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+                <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+              </svg>
+              <span>Tempel</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Detected Platform Badge -->
+      <div class="detection-row" id="detectionRow" style="display: none;">
+        <span class="detection-label">Platform Terdeteksi:</span>
+        <div class="platform-chip" id="platformChip">
+          <span class="chip-icon" id="chipIcon"></span>
+          <span class="chip-name" id="chipName">-</span>
+        </div>
+      </div>
+
+      <!-- Format Selection -->
+      <div class="format-section" id="formatSection">
+        <label class="input-label">Pilih Format</label>
+        <div class="format-pills" role="radiogroup">
+          <button type="button" class="format-pill active" data-format="mp4" role="radio" aria-checked="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="23 7 16 12 23 17 23 7"></polygon>
+              <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+            </svg>
+            <span>Video (MP4)</span>
+          </button>
+          <button type="button" class="format-pill" data-format="mp3" role="radio" aria-checked="false">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 18V5l12-2v13"></path>
+              <circle cx="6" cy="18" r="3"></circle>
+              <circle cx="18" cy="16" r="3"></circle>
+            </svg>
+            <span>Audio (MP3)</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Action Button -->
+      <button type="button" class="btn-download" id="btnDownload" disabled>
+        <span class="btn-text">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          Unduh & Kirim ke Chat
+        </span>
+      </button>
+
+      <!-- Status & Progress Container -->
+      <div class="progress-card" id="progressCard" style="display: none;">
+        <div class="progress-header">
+          <div class="spinner-small" id="progressSpinner"></div>
+          <span class="progress-status-title" id="progressTitle">Sedang Memproses...</span>
+        </div>
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill" id="progressBar"></div>
+        </div>
+        <div class="progress-steps" id="progressSteps">
+          <div class="step-item active" id="step1">
+            <span class="step-circle">1</span>
+            <span class="step-label">Deteksi Link & Ekstraksi Media</span>
+          </div>
+          <div class="step-item" id="step2">
+            <span class="step-circle">2</span>
+            <span class="step-label">Pengunduhan dari Server Platform</span>
+          </div>
+          <div class="step-item" id="step3">
+            <span class="step-circle">3</span>
+            <span class="step-label">Pengunggahan ke Chat Telegram</span>
+          </div>
+        </div>
+        <p class="progress-detail" id="progressDetail">Menghubungkan ke server extractor...</p>
+      </div>
+
+      <!-- Result Card -->
+      <div class="result-card" id="resultCard" style="display: none;">
+        <div class="result-icon-success">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+          </svg>
+        </div>
+        <h2 class="result-title">Berhasil Terkirim!</h2>
+        <p class="result-subtitle" id="resultSubtitle">Media telah berhasil dikirim langsung ke chat bot kamu.</p>
+        <div class="result-actions">
+          <button type="button" class="btn-secondary" id="btnReset">Unduh Media Lain</button>
+          <button type="button" class="btn-primary" id="btnCloseApp">Buka Chat</button>
+        </div>
+      </div>
+
+      <!-- Error Card -->
+      <div class="error-card" id="errorCard" style="display: none;">
+        <div class="result-icon-error">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+        </div>
+        <h2 class="error-title">Gagal Mengunduh</h2>
+        <p class="error-message" id="errorMessage">Terjadi kesalahan pada server saat memproses tautan.</p>
+        <button type="button" class="btn-secondary" id="btnRetry">Coba Lagi</button>
+      </div>
+    </main>
+
+    <!-- Platform Icons Showcase -->
+    <section class="supported-platforms">
+      <h3 class="supported-title">Didukung oleh 17 Platform</h3>
+      <div class="platform-grid">
+        <div class="platform-badge" title="YouTube" data-platform="youtube">
+          <span class="p-dot" style="background:#FF0000;"></span>YouTube
+        </div>
+        <div class="platform-badge" title="TikTok" data-platform="tiktok">
+          <span class="p-dot" style="background:#00F2FE;"></span>TikTok
+        </div>
+        <div class="platform-badge" title="Instagram" data-platform="instagram">
+          <span class="p-dot" style="background:#E1306C;"></span>Instagram
+        </div>
+        <div class="platform-badge" title="Twitter / X" data-platform="twitter">
+          <span class="p-dot" style="background:#FFFFFF;"></span>Twitter/X
+        </div>
+        <div class="platform-badge" title="Spotify" data-platform="spotify">
+          <span class="p-dot" style="background:#1DB954;"></span>Spotify
+        </div>
+        <div class="platform-badge" title="Facebook" data-platform="facebook">
+          <span class="p-dot" style="background:#1877F2;"></span>Facebook
+        </div>
+        <div class="platform-badge" title="Pinterest" data-platform="pinterest">
+          <span class="p-dot" style="background:#E60023;"></span>Pinterest
+        </div>
+        <div class="platform-badge" title="SoundCloud" data-platform="soundcloud">
+          <span class="p-dot" style="background:#FF5500;"></span>SoundCloud
+        </div>
+        <div class="platform-badge" title="Reddit" data-platform="reddit">
+          <span class="p-dot" style="background:#FF4500;"></span>Reddit
+        </div>
+        <div class="platform-badge" title="Apple Music" data-platform="applemusic">
+          <span class="p-dot" style="background:#FA243C;"></span>Apple Music
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+      <p>Darfin Downloader • Powered by yt-dlp & Fast Scraper Engine</p>
+    </footer>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>
