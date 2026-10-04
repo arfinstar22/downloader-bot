@@ -15,6 +15,16 @@ const pixiv = require("./lib/pixiv");
 const rednote = require("./lib/rednote");
 const reddit = require("./lib/reddit");
 const terabox = require("./lib/terabox");
+const capcut = require("./lib/capcut");
+const twitch = require("./lib/twitch");
+const snackvideo = require("./lib/snackvideo");
+const vimeo = require("./lib/vimeo");
+const bluesky = require("./lib/bluesky");
+const streamable = require("./lib/streamable");
+const snapchat = require("./lib/snapchat");
+const sfile = require("./lib/sfile");
+const deezer = require("./lib/deezer");
+const audiomack = require("./lib/audiomack");
 
 module.exports = {
   bilibili,
@@ -34,4 +44,14 @@ module.exports = {
   rednote,
   reddit,
   terabox,
+  capcut,
+  twitch,
+  snackvideo,
+  vimeo,
+  bluesky,
+  streamable,
+  snapchat,
+  sfile,
+  deezer,
+  audiomack,
 };

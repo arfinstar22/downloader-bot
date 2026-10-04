@@ -13,6 +13,16 @@ const testUrls = [
   { url: "https://open.spotify.com/track/4cOdK2wGLETKBW3PvgPWqT", expectedId: "spotify" },
   { url: "https://www.facebook.com/watch/?v=10153231379946729", expectedId: "facebook" },
   { url: "https://music.apple.com/us/song/happier/1560735557", expectedId: "applemusic" },
+  { url: "https://www.capcut.com/t/Zs82Xtest/", expectedId: "capcut" },
+  { url: "https://clips.twitch.tv/ObliviousObservantDunlinRalpherZ", expectedId: "twitch" },
+  { url: "https://sck.io/p/test1234", expectedId: "snackvideo" },
+  { url: "https://vimeo.com/76979871", expectedId: "vimeo" },
+  { url: "https://bsky.app/profile/user.bsky.social/post/3lbtest", expectedId: "bluesky" },
+  { url: "https://streamable.com/moo78", expectedId: "streamable" },
+  { url: "https://www.snapchat.com/spotlight/W7_EDtest", expectedId: "snapchat" },
+  { url: "https://sfile.mobi/test1234", expectedId: "sfile" },
+  { url: "https://www.deezer.com/track/3135556", expectedId: "deezer" },
+  { url: "https://audiomack.com/artist/song/track", expectedId: "audiomack" },
 ];
 
 for (const { url, expectedId } of testUrls) {
@@ -20,7 +30,7 @@ for (const { url, expectedId } of testUrls) {
   assert.ok(p, `Platform must be detected for ${url}`);
   assert.strictEqual(p.id, expectedId, `Expected ${expectedId}, got ${p.id}`);
 }
-console.log("✓ Platform detection tests passed (8/8)");
+console.log(`✓ Platform detection tests passed (${testUrls.length}/${testUrls.length})`);
 
 // 2. State Store
 const id = engine.saveState({ foo: "bar" });
