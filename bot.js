@@ -1,5 +1,5 @@
 require("dotenv").config();
-const { Bot, InlineKeyboard, InputFile } = require("grammy");
+const { Bot, InlineKeyboard, Keyboard, InputFile } = require("grammy");
 const fs = require("fs");
 const engine = require("./lib/engine");
 
@@ -23,59 +23,74 @@ const WEBAPP_URL =
   process.env.RENDER_EXTERNAL_URL ||
   "https://downloader-bot-elsw.onrender.com";
 
-// ── Commands ──
+// ── Persistent Bottom Keyboard (Persis seperti bot Darfin Storage) ──
+
+const bottomKeyboard = new Keyboard()
+  .webApp("📱 Buka Downloader Mini App", WEBAPP_URL)
+  .row()
+  .text("🌐 Platform")
+  .text("📖 Bantuan")
+  .text("🏓 Ping")
+  .resized()
+  .persistent();
+
+// ── Commands & Button Handlers ──
 
 bot.command("start", async (ctx) => {
   const text =
     `👋 *Halo, ${engine.escapeHtml(ctx.from?.first_name || "Sobat")}!*\n\n` +
-    `Saya adalah bot pengunduh media serbaguna (Universal Media Downloader).\n\n` +
+    `Saya adalah bot pengunduh media serbaguna (*Universal Media Downloader*).\n\n` +
     `⚡ *Cara Pakai:*\n` +
-    `• Kirimkan link video/audio langsung ke chat ini, atau\n` +
-    `• Klik tombol *Buka Mini App* di bawah untuk tampilan web yang praktis!\n\n` +
+    `• Klik tombol *📱 Buka Downloader Mini App* di keyboard bawah untuk tampilan aplikasi web interaktif!\n` +
+    `• Atau cukup kirimkan link video/audio langsung ke chat ini.\n\n` +
     `📌 *Fitur:*\n` +
-    `• Langsung kirim file video/audio (bukan cuma link)\n` +
+    `• Langsung kirim file video/audio ke chat Telegram\n` +
     `• Dukungan 17 platform media sosial\n` +
-    `• Telegram Mini App modern & interaktif\n` +
-    `• Pilihan format video & audio (MP4 / MP3)\n\n` +
-    `Ketik /platforms untuk melihat daftar platform yang didukung.`;
+    `• Pilihan format video & audio (MP4 / MP3)\n` +
+    `• Instant re-send via File ID Cache\n\n` +
+    `Klik tombol menu di bawah untuk mulai!`;
 
-  const kb = new InlineKeyboard()
-    .webApp("🚀 Buka Downloader Mini App", WEBAPP_URL)
-    .row()
-    .url("🌐 GitHub Repository", "https://github.com/arfinstar22/downloader-bot");
+  const inlineKb = new InlineKeyboard().webApp("🚀 Buka Downloader", WEBAPP_URL);
 
-  await ctx.reply(text, { parse_mode: "Markdown", reply_markup: kb });
-});
-
-bot.command(["app", "miniapp"], async (ctx) => {
-  const kb = new InlineKeyboard().webApp("🚀 Buka Downloader Mini App", WEBAPP_URL);
-  await ctx.reply("Klik tombol di bawah untuk membuka Telegram Mini App:", {
-    reply_markup: kb,
+  await ctx.reply(text, {
+    parse_mode: "Markdown",
+    reply_markup: bottomKeyboard,
   });
 });
 
-bot.command("help", async (ctx) => {
+bot.command(["app", "miniapp"], async (ctx) => {
+  await ctx.reply("Buka Downloader Mini App melalui tombol di bawah:", {
+    reply_markup: bottomKeyboard,
+  });
+});
+
+const sendHelp = async (ctx) => {
   const text =
     `📖 *Panduan Penggunaan:*\n\n` +
-    `1. Salin link dari YouTube, TikTok, Instagram, Twitter/X, Spotify, Facebook, dll.\n` +
-    `2. Kirim link tersebut ke bot ini.\n` +
-    `3. Untuk YouTube, pilih format (Video atau MP3) melalui tombol yang muncul.\n` +
-    `4. Bot akan langsung mengirimkan file media ke chat.\n\n` +
+    `1. Klik tombol *📱 Buka Downloader Mini App* di keyboard bawah, atau tempel link langsung ke chat.\n` +
+    `2. Didukung: YouTube, TikTok, Instagram, Twitter/X, Spotify, Facebook, dll.\n` +
+    `3. Bot akan otomatis mengunduh dan mengirimkan file media langsung ke kamu.\n\n` +
     `⚠️ *Catatan Batasan File:*\n` +
     `Telegram membatasi upload bot maksimal ~50MB. Jika video berukuran lebih besar, bot akan menyediakan tombol download langsung.`;
 
-  await ctx.reply(text, { parse_mode: "Markdown" });
-});
+  await ctx.reply(text, { parse_mode: "Markdown", reply_markup: bottomKeyboard });
+};
 
-bot.command("platforms", async (ctx) => {
+const sendPlatforms = async (ctx) => {
   const list = engine.PLATFORMS.map((p) => `• ${p.label}`).join("\n");
-  const text = `🌐 *Platform yang Didukung (17 Platform):*\n\n${list}\n\nKirimkan link dari platform mana pun di atas!`;
-  await ctx.reply(text, { parse_mode: "Markdown" });
-});
+  const text = `🌐 *Platform yang Didukung (17 Platform):*\n\n${list}\n\nKirimkan link dari platform mana pun di atas atau buka Mini App!`;
+  await ctx.reply(text, { parse_mode: "Markdown", reply_markup: bottomKeyboard });
+};
 
-bot.command("ping", async (ctx) => {
+bot.command("help", sendHelp);
+bot.hears("📖 Bantuan", sendHelp);
+
+bot.command("platforms", sendPlatforms);
+bot.hears("🌐 Platform", sendPlatforms);
+
+const sendPing = async (ctx) => {
   const start = Date.now();
-  const msg = await ctx.reply("🏓 Pong!");
+  const msg = await ctx.reply("🏓 Pong!", { reply_markup: bottomKeyboard });
   const ms = Date.now() - start;
   await ctx.api.editMessageText(
     ctx.chat.id,
@@ -83,7 +98,10 @@ bot.command("ping", async (ctx) => {
     `🏓 Pong! Latency: *${ms}ms*`,
     { parse_mode: "Markdown" }
   );
-});
+};
+
+bot.command("ping", sendPing);
+bot.hears("🏓 Ping", sendPing);
 
 // ── URL Extraction & Platform Detection ──
 
@@ -501,15 +519,10 @@ bot.start({
     try {
       await bot.api.setChatMenuButton({
         menu_button: {
-          type: "web_app",
-          text: "⚡ Downloader",
-          web_app: { url: WEBAPP_URL },
+          type: "default",
         },
       });
-      console.log(`📱 Telegram Chat Menu Button diatur ke: ${WEBAPP_URL}`);
-    } catch (err) {
-      console.warn("Notice: setChatMenuButton error:", err.message);
-    }
+    } catch (_) {}
   },
 });
 
