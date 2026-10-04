@@ -11,21 +11,28 @@
   --brand-deep: #1E3A8A;
   --brand-glow: rgba(56, 189, 248, 0.25);
 
-  --card-bg: rgba(15, 23, 42, 0.75);
+  --card-bg: rgba(15, 23, 42, 0.82);
   --card-border: rgba(56, 189, 248, 0.16);
-  --input-bg: rgba(6, 10, 19, 0.85);
-  --input-border: rgba(56, 189, 248, 0.22);
+  --input-bg: rgba(6, 10, 19, 0.88);
+  --input-border: rgba(56, 189, 248, 0.2);
   --input-focus-border: #38BDF8;
 
   --success-color: #10B981;
   --error-color: #EF4444;
 
-  --radius-sm: 10px;
+  /* Concentric Radius System (ibelick/ui-skills) */
+  --radius-outer: 24px;
+  --radius-card: 22px;
   --radius-md: 14px;
-  --radius-lg: 22px;
+  --radius-sm: 10px;
+  --radius-pill: 999px;
 
   --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  
+  --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
+  --transition-fast: 0.15s var(--ease-spring);
+  --transition-normal: 0.22s var(--ease-spring);
 }
 
 * {
@@ -40,6 +47,11 @@ img, svg, video {
   display: block;
 }
 
+:focus-visible {
+  outline: 2px solid var(--brand-cyan);
+  outline-offset: 2px;
+}
+
 body {
   font-family: var(--font-family);
   background-color: var(--bg-color);
@@ -52,9 +64,11 @@ body {
   padding: env(safe-area-inset-top, 16px) 16px env(safe-area-inset-bottom, 24px) 16px;
   overflow-x: hidden;
   position: relative;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
 }
 
-/* Layer 1: Ambient Brand Lighting */
+/* ── Layer 1: Ambient Brand Lighting (Restrained & Deep) ── */
 body::before {
   content: "";
   position: fixed;
@@ -64,14 +78,14 @@ body::before {
   bottom: 0;
   z-index: -2;
   background: 
-    radial-gradient(circle at 50% -10%, rgba(2, 132, 199, 0.22) 0%, transparent 55%),
-    radial-gradient(circle at 90% 45%, rgba(30, 58, 138, 0.2) 0%, transparent 45%),
-    radial-gradient(circle at 10% 75%, rgba(14, 165, 233, 0.14) 0%, transparent 45%),
+    radial-gradient(circle at 50% -12%, rgba(2, 132, 199, 0.22) 0%, transparent 60%),
+    radial-gradient(circle at 88% 42%, rgba(30, 58, 138, 0.16) 0%, transparent 48%),
+    radial-gradient(circle at 12% 78%, rgba(14, 165, 233, 0.12) 0%, transparent 45%),
     linear-gradient(180deg, #070B16 0%, #05070E 100%);
   pointer-events: none;
 }
 
-/* Layer 2: Precision Dot Matrix Mesh with Radial Vignette */
+/* ── Layer 2: Precision Dot Matrix Mesh with Radial Fade (ibelick style) ── */
 body::after {
   content: "";
   position: fixed;
@@ -80,7 +94,7 @@ body::after {
   right: 0;
   bottom: 0;
   z-index: -1;
-  background-image: radial-gradient(rgba(56, 189, 248, 0.14) 1px, transparent 1px);
+  background-image: radial-gradient(rgba(56, 189, 248, 0.12) 1px, transparent 1px);
   background-size: 24px 24px;
   mask-image: radial-gradient(ellipse 95% 75% at 50% 30%, black 25%, transparent 85%);
   -webkit-mask-image: radial-gradient(ellipse 95% 75% at 50% 30%, black 25%, transparent 85%);
@@ -118,19 +132,27 @@ body::after {
   border-radius: 13px;
   overflow: hidden;
   background: #060913;
-  border: 1.5px solid rgba(56, 189, 248, 0.35);
+  border: 1px solid rgba(56, 189, 248, 0.35);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 18px rgba(2, 132, 199, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  box-shadow: 
+    0 1px 0 0 rgba(255, 255, 255, 0.15) inset,
+    0 4px 16px rgba(2, 132, 199, 0.35);
   flex-shrink: 0;
-  transition: var(--transition);
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .brand-icon:hover {
-  border-color: rgba(56, 189, 248, 0.6);
-  box-shadow: 0 6px 24px rgba(2, 132, 199, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.25);
   transform: translateY(-1px);
+  border-color: rgba(56, 189, 248, 0.6);
+  box-shadow: 
+    0 1px 0 0 rgba(255, 255, 255, 0.25) inset,
+    0 6px 22px rgba(2, 132, 199, 0.5);
+}
+
+.brand-icon:active {
+  transform: scale(0.95);
 }
 
 .brand-logo-img {
@@ -146,6 +168,7 @@ body::after {
   font-size: 19px;
   font-weight: 800;
   letter-spacing: -0.025em;
+  text-wrap: balance;
   background: linear-gradient(180deg, #FFFFFF 40%, #BAE6FD 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -156,6 +179,7 @@ body::after {
   color: var(--text-muted);
   font-weight: 500;
   letter-spacing: 0.01em;
+  text-wrap: pretty;
 }
 
 .user-pill {
@@ -163,7 +187,7 @@ body::after {
   align-items: center;
   gap: 7px;
   padding: 6px 14px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: rgba(15, 23, 42, 0.75);
   border: 1px solid rgba(56, 189, 248, 0.18);
   font-size: 12px;
@@ -172,6 +196,11 @@ body::after {
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  transition: transform var(--transition-fast);
+}
+
+.user-pill:active {
+  transform: scale(0.96);
 }
 
 .user-dot {
@@ -182,12 +211,14 @@ body::after {
   box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
 }
 
-/* ── Main Card ── */
+/* ── Main Card (Interactive Touch Spotlight + Concentric Radius) ── */
 .main-card {
   position: relative;
-  background: linear-gradient(168deg, rgba(20, 29, 47, 0.82) 0%, rgba(10, 16, 28, 0.92) 100%);
+  background: 
+    radial-gradient(400px circle at var(--mouse-x, 50%) var(--mouse-y, 25%), rgba(56, 189, 248, 0.09), transparent 75%),
+    linear-gradient(168deg, rgba(20, 29, 47, 0.84) 0%, rgba(10, 16, 28, 0.94) 100%);
   border: 1px solid rgba(56, 189, 248, 0.18);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-outer);
   padding: 22px 20px;
   display: flex;
   flex-direction: column;
@@ -195,9 +226,16 @@ body::after {
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   box-shadow: 
-    0 1px 0 0 rgba(255, 255, 255, 0.08) inset,
-    0 24px 48px -12px rgba(0, 0, 0, 0.65),
-    0 0 32px -8px rgba(2, 132, 199, 0.18);
+    0 1px 0 0 rgba(255, 255, 255, 0.1) inset,
+    0 0 0 1px rgba(255, 255, 255, 0.03),
+    0 16px 36px -8px rgba(0, 0, 0, 0.7),
+    0 28px 64px -16px rgba(0, 0, 0, 0.55),
+    0 0 32px -8px rgba(2, 132, 199, 0.16);
+  transition: border-color var(--transition-normal), box-shadow var(--transition-normal);
+}
+
+.main-card:hover {
+  border-color: rgba(56, 189, 248, 0.28);
 }
 
 .input-section {
@@ -211,21 +249,23 @@ body::after {
   font-weight: 600;
   color: #E2E8F0;
   letter-spacing: -0.01em;
+  text-wrap: balance;
 }
 
+/* Concentric input container */
 .input-wrapper {
   position: relative;
   display: flex;
   align-items: center;
-  background: rgba(7, 11, 20, 0.9);
-  border: 1.5px solid rgba(56, 189, 248, 0.2);
+  background: var(--input-bg);
+  border: 1.5px solid var(--input-border);
   border-radius: var(--radius-md);
   box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.5);
-  transition: var(--transition);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .input-wrapper:focus-within {
-  border-color: #38BDF8;
+  border-color: var(--brand-cyan);
   box-shadow: 
     inset 0 2px 5px rgba(0, 0, 0, 0.5),
     0 0 0 3px rgba(56, 189, 248, 0.2),
@@ -265,7 +305,7 @@ body::after {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: var(--transition);
+  transition: transform var(--transition-fast), background var(--transition-fast), color var(--transition-fast);
 }
 
 .btn-clear:hover {
@@ -273,11 +313,16 @@ body::after {
   background: rgba(255, 255, 255, 0.08);
 }
 
+.btn-clear:active {
+  transform: scale(0.92);
+}
+
+/* Scale on Press Tactile Paste Button (ibelick demo) */
 .btn-paste {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 12px;
+  padding: 8px 14px;
   background: rgba(56, 189, 248, 0.12);
   color: #38BDF8;
   border: 1px solid rgba(56, 189, 248, 0.28);
@@ -285,8 +330,9 @@ body::after {
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
-  transition: var(--transition);
-  min-height: 36px;
+  transition: transform var(--transition-fast), background var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
+  min-height: 38px;
+  user-select: none;
 }
 
 .btn-paste:hover {
@@ -297,7 +343,7 @@ body::after {
 }
 
 .btn-paste:active {
-  transform: scale(0.96);
+  transform: scale(0.95);
 }
 
 /* ── Detection Row ── */
@@ -310,7 +356,12 @@ body::after {
   border: 1px solid rgba(56, 189, 248, 0.22);
   border-radius: var(--radius-md);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
-  animation: fadeIn 0.25s ease-out;
+  animation: slideDownIn 0.25s var(--ease-spring);
+}
+
+@keyframes slideDownIn {
+  from { opacity: 0; transform: translateY(-6px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 .detection-label {
@@ -337,7 +388,7 @@ body::after {
   align-items: center;
 }
 
-/* ── Format Pills ── */
+/* ── Format Pills (Concentric Segment Control) ── */
 .format-section {
   display: flex;
   flex-direction: column;
@@ -363,8 +414,9 @@ body::after {
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: var(--transition);
+  transition: transform var(--transition-fast), background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast), box-shadow var(--transition-fast);
   min-height: 48px;
+  user-select: none;
 }
 
 .format-pill:hover {
@@ -380,7 +432,11 @@ body::after {
   box-shadow: 0 0 16px rgba(56, 189, 248, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.15);
 }
 
-/* ── Primary Action Button ── */
+.format-pill:active {
+  transform: scale(0.96);
+}
+
+/* ── Primary Action Button (Scale-on-Press + Specular Light) ── */
 .btn-download {
   width: 100%;
   min-height: 52px;
@@ -394,18 +450,23 @@ body::after {
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.25) inset, 0 8px 24px -4px rgba(2, 132, 199, 0.5);
-  transition: var(--transition);
+  box-shadow: 
+    0 1px 0 rgba(255, 255, 255, 0.28) inset, 
+    0 8px 24px -4px rgba(2, 132, 199, 0.5);
+  transition: transform var(--transition-fast), background var(--transition-fast), box-shadow var(--transition-fast);
+  user-select: none;
 }
 
 .btn-download:hover:not(:disabled) {
   background: linear-gradient(135deg, #0369A1 0%, #1E40AF 100%);
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.3) inset, 0 10px 28px -4px rgba(2, 132, 199, 0.6);
+  box-shadow: 
+    0 1px 0 rgba(255, 255, 255, 0.35) inset, 
+    0 12px 28px -4px rgba(2, 132, 199, 0.6);
   transform: translateY(-1px);
 }
 
 .btn-download:active:not(:disabled) {
-  transform: scale(0.98);
+  transform: scale(0.97);
 }
 
 .btn-download:disabled {
@@ -421,7 +482,7 @@ body::after {
   gap: 8px;
 }
 
-/* ── Progress & Loading Card ── */
+/* ── Progress & Loading Card (Shimmer Beam Animation) ── */
 .progress-card {
   background: rgba(10, 16, 28, 0.95);
   border: 1px solid rgba(56, 189, 248, 0.25);
@@ -430,8 +491,8 @@ body::after {
   display: flex;
   flex-direction: column;
   gap: 14px;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 8px 24px rgba(0, 0, 0, 0.3);
-  animation: fadeIn 0.25s ease-out;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 8px 24px rgba(0, 0, 0, 0.35);
+  animation: slideDownIn 0.25s var(--ease-spring);
 }
 
 .progress-header {
@@ -466,10 +527,17 @@ body::after {
 .progress-bar-fill {
   height: 100%;
   width: 15%;
-  background: linear-gradient(90deg, #38BDF8, #2563EB);
+  background: linear-gradient(90deg, #0284C7 0%, #38BDF8 50%, #0284C7 100%);
+  background-size: 200% 100%;
   border-radius: 999px;
   box-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
-  transition: width 0.4s ease;
+  transition: width 0.4s var(--ease-spring);
+  animation: shimmerBeam 2s linear infinite;
+}
+
+@keyframes shimmerBeam {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
 }
 
 .progress-steps {
@@ -477,6 +545,7 @@ body::after {
   flex-direction: column;
   gap: 10px;
   padding: 6px 0;
+  font-variant-numeric: tabular-nums;
 }
 
 .step-item {
@@ -485,7 +554,7 @@ body::after {
   gap: 10px;
   font-size: 13px;
   color: #64748B;
-  transition: var(--transition);
+  transition: color var(--transition-fast);
 }
 
 .step-circle {
@@ -499,6 +568,7 @@ body::after {
   justify-content: center;
   font-size: 11px;
   font-weight: 700;
+  font-family: var(--font-mono);
 }
 
 .step-item.active {
@@ -508,7 +578,7 @@ body::after {
 .step-item.active .step-circle {
   background: #0284C7;
   color: #FFFFFF;
-  box-shadow: 0 0 8px rgba(2, 132, 199, 0.6);
+  box-shadow: 0 0 10px rgba(2, 132, 199, 0.6);
 }
 
 .step-item.done {
@@ -524,6 +594,7 @@ body::after {
   font-size: 12px;
   color: #94A3B8;
   font-style: italic;
+  text-wrap: pretty;
 }
 
 /* ── Result & Error Cards ── */
@@ -534,7 +605,7 @@ body::after {
   flex-direction: column;
   align-items: center;
   gap: 12px;
-  animation: fadeIn 0.3s ease-out;
+  animation: slideDownIn 0.3s var(--ease-spring);
 }
 
 .result-icon-success {
@@ -554,12 +625,14 @@ body::after {
   font-size: 18px;
   font-weight: 700;
   color: #FFFFFF;
+  text-wrap: balance;
 }
 
 .result-subtitle {
   font-size: 14px;
   color: #94A3B8;
   max-width: 320px;
+  text-wrap: pretty;
 }
 
 .result-actions {
@@ -576,7 +649,8 @@ body::after {
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: var(--transition);
+  transition: transform var(--transition-fast), background var(--transition-fast), opacity var(--transition-fast);
+  user-select: none;
 }
 
 .btn-secondary {
@@ -590,6 +664,10 @@ body::after {
   border-color: rgba(56, 189, 248, 0.4);
 }
 
+.btn-secondary:active {
+  transform: scale(0.97);
+}
+
 .btn-primary {
   background: linear-gradient(135deg, #0284C7, #2563EB);
   color: #FFFFFF;
@@ -600,6 +678,10 @@ body::after {
 .btn-primary:hover {
   opacity: 0.95;
   box-shadow: 0 6px 18px rgba(2, 132, 199, 0.5);
+}
+
+.btn-primary:active {
+  transform: scale(0.97);
 }
 
 .result-icon-error {
@@ -618,15 +700,17 @@ body::after {
   font-size: 17px;
   font-weight: 700;
   color: #FCA5A5;
+  text-wrap: balance;
 }
 
 .error-message {
   font-size: 13px;
   color: #CBD5E1;
   max-width: 340px;
+  text-wrap: pretty;
 }
 
-/* ── Supported Platforms Showcase ── */
+/* ── Supported Platforms Showcase (ibelick Card Grid) ── */
 .supported-platforms {
   display: flex;
   flex-direction: column;
@@ -671,7 +755,9 @@ body::after {
   color: #94A3B8;
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-  transition: var(--transition);
+  cursor: pointer;
+  user-select: none;
+  transition: transform var(--transition-fast), background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .platform-badge:hover, .platform-badge.highlight {
@@ -680,6 +766,10 @@ body::after {
   background: rgba(56, 189, 248, 0.15);
   box-shadow: 0 2px 12px rgba(2, 132, 199, 0.25);
   transform: translateY(-1px);
+}
+
+.platform-badge:active {
+  transform: scale(0.95);
 }
 
 .p-dot {
@@ -695,16 +785,12 @@ body::after {
   padding: 16px 0;
   font-size: 11px;
   color: #64748B;
+  font-variant-numeric: tabular-nums;
 }
 
-/* ── Animations ── */
+/* ── Keyframes ── */
 @keyframes spin {
   to { transform: rotate(360deg); }
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(4px); }
-  to { opacity: 1; transform: translateY(0); }
 }
 
 @media (prefers-reduced-motion: reduce) {

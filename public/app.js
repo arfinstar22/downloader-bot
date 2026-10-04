@@ -308,4 +308,39 @@
     btnDownload.disabled = false;
   });
 
+  // Interactive Pointer / Touch Spotlight (ibelick/ui-skills)
+  const mainCard = document.querySelector(".main-card");
+  if (mainCard) {
+    const updateSpotlight = (clientX, clientY) => {
+      const rect = mainCard.getBoundingClientRect();
+      const x = clientX - rect.left;
+      const y = clientY - rect.top;
+      mainCard.style.setProperty("--mouse-x", `${x}px`);
+      mainCard.style.setProperty("--mouse-y", `${y}px`);
+    };
+
+    mainCard.addEventListener("pointermove", (e) => {
+      updateSpotlight(e.clientX, e.clientY);
+    }, { passive: true });
+
+    mainCard.addEventListener("touchmove", (e) => {
+      if (e.touches && e.touches[0]) {
+        updateSpotlight(e.touches[0].clientX, e.touches[0].clientY);
+      }
+    }, { passive: true });
+  }
+
+  // Interactive Platform Badges (ibelick/ui-skills feedback)
+  document.querySelectorAll(".platform-badge").forEach((badge) => {
+    badge.addEventListener("click", () => {
+      if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred("light");
+      badge.classList.add("highlight");
+      setTimeout(() => badge.classList.remove("highlight"), 600);
+      if (!urlInput.value.trim()) {
+        urlInput.placeholder = `Tempel link ${badge.getAttribute("title") || "media"}...`;
+        urlInput.focus();
+      }
+    });
+  });
+
 })();
