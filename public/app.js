@@ -39,10 +39,22 @@
   let selectedFormat = "mp4";
   let detectedPlatform = null;
 
-  // Setup user info from Telegram
-  if (tg?.initDataUnsafe?.user) {
-    const user = tg.initDataUnsafe.user;
-    userNameEl.textContent = user.first_name || "Kamu";
+  // Resolve active Chat ID & User Info
+  const queryParams = new URLSearchParams(window.location.search);
+  const queryChatId = queryParams.get("chatId");
+  if (queryChatId) {
+    try { localStorage.setItem("darfin_chat_id", queryChatId); } catch {}
+  }
+  const cachedChatId = (() => {
+    try { return localStorage.getItem("darfin_chat_id"); } catch { return null; }
+  })();
+
+  const activeUserId = tg?.initDataUnsafe?.user?.id || queryChatId || cachedChatId || null;
+
+  if (tg?.initDataUnsafe?.user?.first_name) {
+    userNameEl.textContent = tg.initDataUnsafe.user.first_name;
+  } else if (activeUserId) {
+    userNameEl.textContent = "Terhubung";
   }
 
   // Platform definitions with branding colors & SVG icons
@@ -226,7 +238,17 @@
     progressTitle.textContent = "Menganalisis link...";
     progressDetail.textContent = `Menghubungi media extractor untuk ${detectedPlatform?.name || "media"}...`;
 
-    const userId = tg?.initDataUnsafe?.user?.id || null;
+    const targetUserId =
+      tg?.initDataUnsafe?.user?.id ||
+      new URLSearchParams(window.location.search).get("chatId") ||
+      (() => { try { return localStorage.getItem("darfin_chat_id"); } catch { return null; } })() ||
+      null;
+
+    // Fallback: If no chatId detected but tg.sendData available, send data back to bot
+    if (!targetUserId && tg && typeof tg.sendData === "function") {
+      tg.sendData(JSON.stringify({ url: rawUrl, format: selectedFormat }));
+      return;
+    }
 
     try {
       // Advance step 1 -> 2
@@ -253,7 +275,7 @@
         body: JSON.stringify({
           url: rawUrl,
           format: selectedFormat,
-          userId,
+          userId: targetUserId,
           initData: tg?.initData || ""
         }),
       });

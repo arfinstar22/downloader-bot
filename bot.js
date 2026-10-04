@@ -23,16 +23,21 @@ const WEBAPP_URL =
   process.env.RENDER_EXTERNAL_URL ||
   "https://downloader-bot-elsw.onrender.com";
 
-// ── Persistent Bottom Keyboard (Persis seperti bot Darfin Storage) ──
+// ── Persistent Bottom Keyboard (Menyertakan chatId pengguna) ──
 
-const bottomKeyboard = new Keyboard()
-  .webApp("📱 Buka Downloader Mini App", WEBAPP_URL)
-  .row()
-  .text("🌐 Platform")
-  .text("📖 Bantuan")
-  .text("🏓 Ping")
-  .resized()
-  .persistent();
+function getBottomKeyboard(chatId) {
+  const url = chatId ? `${WEBAPP_URL}?chatId=${chatId}` : WEBAPP_URL;
+  return new Keyboard()
+    .webApp("📱 Buka Downloader Mini App", url)
+    .row()
+    .text("🌐 Platform")
+    .text("📖 Bantuan")
+    .text("🏓 Ping")
+    .resized()
+    .persistent();
+}
+
+const bottomKeyboard = getBottomKeyboard();
 
 // ── Commands & Button Handlers ──
 
@@ -56,13 +61,13 @@ bot.command("start", async (ctx) => {
 
   await ctx.reply(text, {
     parse_mode: "Markdown",
-    reply_markup: bottomKeyboard,
+    reply_markup: getBottomKeyboard(ctx.chat.id),
   });
 });
 
 bot.command(["app", "miniapp"], async (ctx) => {
   await ctx.reply("Buka Downloader Mini App melalui tombol di bawah:", {
-    reply_markup: bottomKeyboard,
+    reply_markup: getBottomKeyboard(ctx.chat.id),
   });
 });
 
@@ -75,13 +80,13 @@ const sendHelp = async (ctx) => {
     `⚠️ *Catatan Batasan File:*\n` +
     `Telegram membatasi upload bot maksimal ~50MB. Jika video berukuran lebih besar, bot akan menyediakan tombol download langsung.`;
 
-  await ctx.reply(text, { parse_mode: "Markdown", reply_markup: bottomKeyboard });
+  await ctx.reply(text, { parse_mode: "Markdown", reply_markup: getBottomKeyboard(ctx.chat.id) });
 };
 
 const sendPlatforms = async (ctx) => {
   const list = engine.PLATFORMS.map((p) => `• ${p.label}`).join("\n");
   const text = `🌐 *Platform yang Didukung (17 Platform):*\n\n${list}\n\nKirimkan link dari platform mana pun di atas atau buka Mini App!`;
-  await ctx.reply(text, { parse_mode: "Markdown", reply_markup: bottomKeyboard });
+  await ctx.reply(text, { parse_mode: "Markdown", reply_markup: getBottomKeyboard(ctx.chat.id) });
 };
 
 bot.command("help", sendHelp);
@@ -92,7 +97,7 @@ bot.hears("🌐 Platform", sendPlatforms);
 
 const sendPing = async (ctx) => {
   const start = Date.now();
-  const msg = await ctx.reply("🏓 Pong!", { reply_markup: bottomKeyboard });
+  const msg = await ctx.reply("🏓 Pong!", { reply_markup: getBottomKeyboard(ctx.chat.id) });
   const ms = Date.now() - start;
   await ctx.api.editMessageText(
     ctx.chat.id,
@@ -104,6 +109,51 @@ const sendPing = async (ctx) => {
 
 bot.command("ping", sendPing);
 bot.hears("🏓 Ping", sendPing);
+
+// ── Unified Media Processor ──
+
+async function processMediaDownload(ctx, rawUrl, format = "mp4") {
+  const platform = engine.detectPlatform(rawUrl);
+  if (!platform) {
+    throw new Error("Platform link tidak didukung atau format salah.");
+  }
+
+  // Khusus YouTube
+  if (platform.id === "youtube") {
+    const result = await engine.downloadYouTubeVideo(rawUrl);
+    const safeTitle = (result.title || "YouTube Video").slice(0, 100);
+    if (format === "mp3") {
+      await ctx.replyWithAudio(new InputFile(result.filePath, `${safeTitle}.mp3`), {
+        caption: `🎵 ${result.title}`.slice(0, 1000),
+        title: result.title,
+      });
+    } else {
+      await ctx.replyWithVideo(new InputFile(result.filePath, `${safeTitle}.mp4`), {
+        caption: `▶️ ${result.title}`.slice(0, 1000),
+        supports_streaming: true,
+      });
+    }
+    try { fs.unlinkSync(result.filePath); } catch {}
+    return { title: result.title, platform: platform.label };
+  }
+
+  // Platform lain (TikTok, Instagram, Twitter, Spotify, dll)
+  const res = await engine.scrapeMedia(platform, rawUrl, { format });
+  if (!res || !res.status || !res.result) {
+    throw new Error(res?.message || `Gagal mengambil media dari ${platform.label}.`);
+  }
+
+  const title = res.result.title || platform.label;
+  const downloads = engine.getDownloads(res.result);
+  if (downloads.length === 0) {
+    throw new Error("Tidak ditemukan media yang dapat diunduh untuk link ini.");
+  }
+
+  const targetDownload = downloads[0];
+  await engine.sendMedia(ctx, targetDownload, title);
+  return { title, platform: platform.label };
+}
+
 
 // ── URL Extraction & Platform Detection ──
 
@@ -131,7 +181,6 @@ bot.on("message:text", async (ctx) => {
     return;
   }
 
-  // Khusus YouTube: Langsung proses unduh video dan kirim tanpa perlu klik tombol
   if (platform.id === "youtube") {
     const statusMsg = await ctx.reply(
       `⏳ Sedang mengunduh video *${platform.label}*... Mohon tunggu sebentar.`,
@@ -139,20 +188,7 @@ bot.on("message:text", async (ctx) => {
     );
 
     try {
-      const result = await engine.downloadYouTubeVideo(rawUrl);
-      await ctx.api.editMessageText(
-        ctx.chat.id,
-        statusMsg.message_id,
-        `⬇️ Mengirim video: *${engine.escapeHtml(result.title)}*...`,
-        { parse_mode: "Markdown" }
-      );
-
-      await ctx.replyWithVideo(new InputFile(result.filePath), {
-        caption: `▶️ ${result.title}`,
-        supports_streaming: true,
-      });
-
-      try { fs.unlinkSync(result.filePath); } catch {}
+      await processMediaDownload(ctx, rawUrl, "mp4");
       try { await ctx.api.deleteMessage(ctx.chat.id, statusMsg.message_id); } catch {}
     } catch (err) {
       console.error("YouTube download error:", err.message);
@@ -180,42 +216,7 @@ bot.on("message:text", async (ctx) => {
   );
 
   try {
-    const res = await engine.scrapeMedia(platform, rawUrl);
-    if (!res || !res.status || !res.result) {
-      await ctx.api.editMessageText(
-        ctx.chat.id,
-        statusMsg.message_id,
-        `❌ Gagal mengambil media dari ${platform.label}.\nAlasan: ${
-          res?.message || "Server tidak merespons atau link privat."
-        }`
-      );
-      return;
-    }
-
-    const title = res.result.title || platform.label;
-    const downloads = engine.getDownloads(res.result);
-
-    if (downloads.length === 0) {
-      await ctx.api.editMessageText(
-        ctx.chat.id,
-        statusMsg.message_id,
-        `❌ Tidak ditemukan media yang dapat diunduh untuk link ini.`
-      );
-      return;
-    }
-
-    await ctx.api.editMessageText(
-      ctx.chat.id,
-      statusMsg.message_id,
-      `⬇️ Mengunduh dan mengirim media: *${engine.escapeHtml(title)}*...`,
-      { parse_mode: "Markdown" }
-    );
-
-    // Ambil media pertama yang valid
-    const targetDownload = downloads[0];
-    await engine.sendMedia(ctx, targetDownload, title);
-
-    // Hapus status pesan setelah terkirim
+    await processMediaDownload(ctx, rawUrl, "mp4");
     try {
       await ctx.api.deleteMessage(ctx.chat.id, statusMsg.message_id);
     } catch {}
@@ -317,13 +318,28 @@ bot.catch((err) => {
   console.error("Telegram Bot Unhandled Error:", err);
 });
 
-// ── Telegram Mini App Data Handler ──
+// ── Telegram Mini App Data Handler (tg.sendData fallback) ──
 
 bot.on("message:web_app_data", async (ctx) => {
   try {
     const data = JSON.parse(ctx.message.web_app_data.data);
-    if (data.url) {
-      ctx.message.text = data.url;
+    const rawUrl = data.url;
+    const format = data.format || "mp4";
+    if (!rawUrl) return;
+
+    const statusMsg = await ctx.reply("⏳ Memproses unduhan dari Mini App...", {
+      reply_markup: getBottomKeyboard(ctx.chat.id),
+    });
+
+    try {
+      await processMediaDownload(ctx, rawUrl, format);
+      try { await ctx.api.deleteMessage(ctx.chat.id, statusMsg.message_id); } catch {}
+    } catch (err) {
+      await ctx.api.editMessageText(
+        ctx.chat.id,
+        statusMsg.message_id,
+        `⚠️ Gagal mengunduh: ${err.message}`
+      );
     }
   } catch (err) {
     console.error("web_app_data error:", err);
@@ -437,72 +453,29 @@ http
           } catch {}
         }
 
-        const platform = engine.detectPlatform(rawUrl);
-        if (!platform) {
+        if (!chatId) {
           res.writeHead(400, { "Content-Type": "application/json" });
           return res.end(
             JSON.stringify({
               success: false,
-              message: "Platform link tidak didukung atau format link salah.",
+              message: "Akun Telegram tidak terdeteksi. Silakan ketik /start di bot lalu buka kembali tombol Mini App.",
             })
           );
         }
 
-        // Process YouTube
-        if (platform.id === "youtube") {
-          const result = await engine.downloadYouTubeVideo(rawUrl);
-          if (chatId) {
-            if (format === "mp3") {
-              await bot.api.sendAudio(chatId, new InputFile(result.filePath), {
-                caption: `🎵 ${result.title}`,
-                title: result.title,
-              });
-            } else {
-              await bot.api.sendVideo(chatId, new InputFile(result.filePath), {
-                caption: `▶️ ${result.title}`,
-                supports_streaming: true,
-              });
-            }
-            try { fs.unlinkSync(result.filePath); } catch {}
-          }
+        const fakeCtx = {
+          chat: { id: chatId },
+          api: bot.api,
+          replyWithVideo: (f, o) => bot.api.sendVideo(chatId, f, o),
+          replyWithAudio: (f, o) => bot.api.sendAudio(chatId, f, o),
+          replyWithPhoto: (f, o) => bot.api.sendPhoto(chatId, f, o),
+          reply: (t, o) => bot.api.sendMessage(chatId, t, o),
+        };
 
-          res.writeHead(200, { "Content-Type": "application/json" });
-          return res.end(JSON.stringify({ success: true, title: result.title, platform: platform.label }));
-        }
-
-        // Process Other Platforms
-        const scrapeRes = await engine.scrapeMedia(platform, rawUrl, { format });
-        if (!scrapeRes || !scrapeRes.status || !scrapeRes.result) {
-          res.writeHead(400, { "Content-Type": "application/json" });
-          return res.end(
-            JSON.stringify({
-              success: false,
-              message: scrapeRes?.message || `Gagal mengambil media dari ${platform.label}.`,
-            })
-          );
-        }
-
-        const title = scrapeRes.result.title || platform.label;
-        const downloads = engine.getDownloads(scrapeRes.result);
-        if (downloads.length === 0) {
-          res.writeHead(400, { "Content-Type": "application/json" });
-          return res.end(JSON.stringify({ success: false, message: "Media stream tidak ditemukan." }));
-        }
-
-        if (chatId) {
-          const fakeCtx = {
-            chat: { id: chatId },
-            api: bot.api,
-            replyWithVideo: (f, o) => bot.api.sendVideo(chatId, f, o),
-            replyWithAudio: (f, o) => bot.api.sendAudio(chatId, f, o),
-            replyWithPhoto: (f, o) => bot.api.sendPhoto(chatId, f, o),
-            reply: (t, o) => bot.api.sendMessage(chatId, t, o),
-          };
-          await engine.sendMedia(fakeCtx, downloads[0], title);
-        }
+        const result = await processMediaDownload(fakeCtx, rawUrl, format);
 
         res.writeHead(200, { "Content-Type": "application/json" });
-        return res.end(JSON.stringify({ success: true, title, platform: platform.label }));
+        return res.end(JSON.stringify({ success: true, title: result.title, platform: result.platform }));
       } catch (err) {
         console.error("API download error:", err.message);
         res.writeHead(500, { "Content-Type": "application/json" });
