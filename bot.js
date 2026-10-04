@@ -448,6 +448,19 @@ http
       if (pathname === "/logo.jpg" || pathname === "/favicon.ico") {
         return serveFile(res, path.join(PUBLIC_DIR, "logo.jpg"), "image/jpeg");
       }
+      if (pathname.startsWith("/icon/")) {
+        const iconFile = path.basename(pathname);
+        const iconPath = path.join(PUBLIC_DIR, "icon", iconFile);
+        const ext = path.extname(iconFile).toLowerCase();
+        const mimeTypes = {
+          ".png": "image/png",
+          ".webp": "image/webp",
+          ".jpg": "image/jpeg",
+          ".jpeg": "image/jpeg",
+          ".svg": "image/svg+xml",
+        };
+        return serveFile(res, iconPath, mimeTypes[ext] || "application/octet-stream");
+      }
     }
 
     // API: Download & send media to user chat

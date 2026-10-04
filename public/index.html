@@ -16,7 +16,7 @@
   <meta name="theme-color" content="#060913">
   <link rel="icon" type="image/jpeg" href="/logo.jpg">
   <link rel="apple-touch-icon" href="/logo.jpg">
-  <link rel="stylesheet" href="/style.css?v=2.4">
+  <link rel="stylesheet" href="/style.css?v=3.0">
 </head>
 <body>
   <div class="app-container">
@@ -42,6 +42,12 @@
       <div class="input-section">
         <label for="urlInput" class="input-label">Tempel Link Media</label>
         <div class="input-wrapper" id="inputWrapper">
+          <div class="input-lead-icon" aria-hidden="true">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+            </svg>
+          </div>
           <input 
             type="url" 
             id="urlInput" 
@@ -171,76 +177,132 @@
 
     <!-- Platform Icons Showcase -->
     <section class="supported-platforms">
-      <h3 class="supported-title">Didukung oleh 30 Platform</h3>
+      <div class="supported-header">
+        <h3 class="supported-title">
+          <span>Didukung oleh 30 Platform</span>
+          <span class="supported-count">30</span>
+        </h3>
+      </div>
       <div class="platform-grid">
         <div class="platform-badge" title="YouTube" data-platform="youtube">
-          <span class="p-dot" style="background:#FF0000;"></span>YouTube
+          <img src="/icon/youtube.png" alt="YouTube" class="p-icon" loading="lazy" width="20" height="20">
+          <span>YouTube</span>
         </div>
         <div class="platform-badge" title="TikTok" data-platform="tiktok">
-          <span class="p-dot" style="background:#00F2FE;"></span>TikTok
+          <img src="/icon/tik-tok.png" alt="TikTok" class="p-icon" loading="lazy" width="20" height="20">
+          <span>TikTok</span>
         </div>
         <div class="platform-badge" title="Instagram" data-platform="instagram">
-          <span class="p-dot" style="background:#E1306C;"></span>Instagram
-        </div>
-        <div class="platform-badge" title="CapCut" data-platform="capcut">
-          <span class="p-dot" style="background:#00C4CC;"></span>CapCut
-        </div>
-        <div class="platform-badge" title="Twitch" data-platform="twitch">
-          <span class="p-dot" style="background:#9146FF;"></span>Twitch Clips
-        </div>
-        <div class="platform-badge" title="Likee" data-platform="likee">
-          <span class="p-dot" style="background:#FF0050;"></span>Likee
-        </div>
-        <div class="platform-badge" title="Loom" data-platform="loom">
-          <span class="p-dot" style="background:#625DF5;"></span>Loom
-        </div>
-        <div class="platform-badge" title="Tidal" data-platform="tidal">
-          <span class="p-dot" style="background:#000000;border:1px solid #555;"></span>Tidal
+          <img src="/icon/instagram.png" alt="Instagram" class="p-icon" loading="lazy" width="20" height="20">
+          <span>Instagram</span>
         </div>
         <div class="platform-badge" title="Twitter / X" data-platform="twitter">
-          <span class="p-dot" style="background:#FFFFFF;"></span>Twitter/X
+          <img src="/icon/twitter.png" alt="Twitter / X" class="p-icon invert-white" loading="lazy" width="20" height="20">
+          <span>Twitter/X</span>
         </div>
         <div class="platform-badge" title="Spotify" data-platform="spotify">
-          <span class="p-dot" style="background:#1DB954;"></span>Spotify
-        </div>
-        <div class="platform-badge" title="SnackVideo" data-platform="snackvideo">
-          <span class="p-dot" style="background:#FF7A00;"></span>SnackVideo
+          <img src="/icon/spotify.png" alt="Spotify" class="p-icon" loading="lazy" width="20" height="20">
+          <span>Spotify</span>
         </div>
         <div class="platform-badge" title="Facebook" data-platform="facebook">
-          <span class="p-dot" style="background:#1877F2;"></span>Facebook
+          <img src="/icon/facebook.png" alt="Facebook" class="p-icon" loading="lazy" width="20" height="20">
+          <span>Facebook</span>
         </div>
-        <div class="platform-badge" title="Vimeo" data-platform="vimeo">
-          <span class="p-dot" style="background:#1AB7EA;"></span>Vimeo
+        <div class="platform-badge" title="CapCut" data-platform="capcut">
+          <img src="/icon/capcut.png" alt="CapCut" class="p-icon invert-white" loading="lazy" width="20" height="20">
+          <span>CapCut</span>
         </div>
-        <div class="platform-badge" title="Bluesky" data-platform="bluesky">
-          <span class="p-dot" style="background:#0285FF;"></span>Bluesky
-        </div>
-        <div class="platform-badge" title="Streamable" data-platform="streamable">
-          <span class="p-dot" style="background:#0F9D58;"></span>Streamable
-        </div>
-        <div class="platform-badge" title="Snapchat" data-platform="snapchat">
-          <span class="p-dot" style="background:#FFFC00;"></span>Snapchat
-        </div>
-        <div class="platform-badge" title="Sfile" data-platform="sfile">
-          <span class="p-dot" style="background:#3B82F6;"></span>Sfile.mobi
-        </div>
-        <div class="platform-badge" title="Deezer" data-platform="deezer">
-          <span class="p-dot" style="background:#A238FF;"></span>Deezer
-        </div>
-        <div class="platform-badge" title="Audiomack" data-platform="audiomack">
-          <span class="p-dot" style="background:#FFA200;"></span>Audiomack
+        <div class="platform-badge" title="Twitch" data-platform="twitch">
+          <img src="/icon/twitch.png" alt="Twitch" class="p-icon" loading="lazy" width="20" height="20">
+          <span>Twitch Clips</span>
         </div>
         <div class="platform-badge" title="Pinterest" data-platform="pinterest">
-          <span class="p-dot" style="background:#E60023;"></span>Pinterest
+          <img src="/icon/pinterest.png" alt="Pinterest" class="p-icon" loading="lazy" width="20" height="20">
+          <span>Pinterest</span>
         </div>
-        <div class="platform-badge" title="SoundCloud" data-platform="soundcloud">
-          <span class="p-dot" style="background:#FF5500;"></span>SoundCloud
+        <div class="platform-badge" title="Snapchat" data-platform="snapchat">
+          <img src="/icon/snapchat.png" alt="Snapchat" class="p-icon" loading="lazy" width="20" height="20">
+          <span>Snapchat</span>
         </div>
         <div class="platform-badge" title="Reddit" data-platform="reddit">
-          <span class="p-dot" style="background:#FF4500;"></span>Reddit
+          <img src="/icon/reddit-icon.png" alt="Reddit" class="p-icon" loading="lazy" width="20" height="20">
+          <span>Reddit</span>
         </div>
         <div class="platform-badge" title="Apple Music" data-platform="applemusic">
-          <span class="p-dot" style="background:#FA243C;"></span>Apple Music
+          <img src="/icon/music.png" alt="Apple Music" class="p-icon" loading="lazy" width="20" height="20">
+          <span>Apple Music</span>
+        </div>
+        <div class="platform-badge" title="SoundCloud" data-platform="soundcloud">
+          <img src="/icon/soundcloud.png" alt="SoundCloud" class="p-icon" loading="lazy" width="20" height="20">
+          <span>SoundCloud</span>
+        </div>
+        <div class="platform-badge" title="Threads" data-platform="threads">
+          <img src="/icon/threads.png" alt="Threads" class="p-icon" loading="lazy" width="20" height="20">
+          <span>Threads</span>
+        </div>
+        <div class="platform-badge" title="Bluesky" data-platform="bluesky">
+          <img src="/icon/bluesky-icon.png" alt="Bluesky" class="p-icon" loading="lazy" width="20" height="20">
+          <span>Bluesky</span>
+        </div>
+        <div class="platform-badge" title="Streamable" data-platform="streamable">
+          <img src="/icon/streamable.png" alt="Streamable" class="p-icon" loading="lazy" width="20" height="20">
+          <span>Streamable</span>
+        </div>
+        <div class="platform-badge" title="SnackVideo" data-platform="snackvideo">
+          <img src="/icon/snackvideo.png" alt="SnackVideo" class="p-icon" loading="lazy" width="20" height="20">
+          <span>SnackVideo</span>
+        </div>
+        <div class="platform-badge" title="Vimeo" data-platform="vimeo">
+          <img src="/icon/vimeo.png" alt="Vimeo" class="p-icon" loading="lazy" width="20" height="20">
+          <span>Vimeo</span>
+        </div>
+        <div class="platform-badge" title="Deezer" data-platform="deezer">
+          <img src="/icon/deezer.png" alt="Deezer" class="p-icon" loading="lazy" width="20" height="20">
+          <span>Deezer</span>
+        </div>
+        <div class="platform-badge" title="Audiomack" data-platform="audiomack">
+          <img src="/icon/audiomack-logo.png" alt="Audiomack" class="p-icon" loading="lazy" width="20" height="20">
+          <span>Audiomack</span>
+        </div>
+        <div class="platform-badge" title="Likee" data-platform="likee">
+          <img src="/icon/likee-icon.png" alt="Likee" class="p-icon" loading="lazy" width="20" height="20">
+          <span>Likee</span>
+        </div>
+        <div class="platform-badge" title="Loom" data-platform="loom">
+          <img src="/icon/loom.png" alt="Loom" class="p-icon" loading="lazy" width="20" height="20">
+          <span>Loom</span>
+        </div>
+        <div class="platform-badge" title="Tidal" data-platform="tidal">
+          <img src="/icon/tidal.png" alt="Tidal" class="p-icon invert-white" loading="lazy" width="20" height="20">
+          <span>Tidal</span>
+        </div>
+        <div class="platform-badge" title="Bilibili" data-platform="bilibili">
+          <img src="/icon/bilibili.png" alt="Bilibili" class="p-icon" loading="lazy" width="20" height="20">
+          <span>Bilibili</span>
+        </div>
+        <div class="platform-badge" title="Douyin" data-platform="douyin">
+          <img src="/icon/douyin.png" alt="Douyin" class="p-icon" loading="lazy" width="20" height="20">
+          <span>Douyin</span>
+        </div>
+        <div class="platform-badge" title="Bandcamp" data-platform="bandcamp">
+          <img src="/icon/bandcamp.png" alt="Bandcamp" class="p-icon" loading="lazy" width="20" height="20">
+          <span>Bandcamp</span>
+        </div>
+        <div class="platform-badge" title="Pixiv" data-platform="pixiv">
+          <img src="/icon/pixiv.png" alt="Pixiv" class="p-icon" loading="lazy" width="20" height="20">
+          <span>Pixiv</span>
+        </div>
+        <div class="platform-badge" title="RedNote" data-platform="rednote">
+          <img src="/icon/rednote.png" alt="RedNote" class="p-icon" loading="lazy" width="20" height="20">
+          <span>RedNote</span>
+        </div>
+        <div class="platform-badge" title="TeraBox" data-platform="terabox">
+          <img src="/icon/terabox.png" alt="TeraBox" class="p-icon" loading="lazy" width="20" height="20">
+          <span>TeraBox</span>
+        </div>
+        <div class="platform-badge" title="Sfile.mobi" data-platform="sfile">
+          <img src="/icon/sfile.mobi.webp" alt="Sfile.mobi" class="p-icon" loading="lazy" width="20" height="20">
+          <span>Sfile.mobi</span>
         </div>
       </div>
     </section>
@@ -251,6 +313,6 @@
     </footer>
   </div>
 
-  <script src="/app.js?v=2.5"></script>
+  <script src="/app.js?v=3.0"></script>
 </body>
 </html>
