@@ -405,6 +405,9 @@ http
       if (pathname === "/app.js") {
         return serveFile(res, path.join(PUBLIC_DIR, "app.js"), "application/javascript; charset=utf-8");
       }
+      if (pathname === "/logo.jpg" || pathname === "/favicon.ico") {
+        return serveFile(res, path.join(PUBLIC_DIR, "logo.jpg"), "image/jpeg");
+      }
     }
 
     // API: Download & send media to user chat
