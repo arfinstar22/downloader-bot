@@ -333,8 +333,11 @@ bot.on("message:web_app_data", async (ctx) => {
 
     try {
       await processMediaDownload(ctx, rawUrl, format);
+      // Auto-hapus notif pesan status & service notification 'Data from...' agar chat bersih
       try { await ctx.api.deleteMessage(ctx.chat.id, statusMsg.message_id); } catch {}
+      try { await ctx.deleteMessage(); } catch {}
     } catch (err) {
+      try { await ctx.deleteMessage(); } catch {}
       await ctx.api.editMessageText(
         ctx.chat.id,
         statusMsg.message_id,
