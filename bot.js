@@ -26,7 +26,7 @@ const WEBAPP_URL =
 // ── Persistent Bottom Keyboard (Menyertakan chatId pengguna) ──
 
 function getBottomKeyboard(chatId) {
-  const url = chatId ? `${WEBAPP_URL}?chatId=${chatId}` : WEBAPP_URL;
+  const url = chatId ? `${WEBAPP_URL}?v=2&chatId=${chatId}` : `${WEBAPP_URL}?v=2`;
   return new Keyboard()
     .webApp("📱 Buka Downloader Mini App", url)
     .row()
