@@ -37,6 +37,10 @@ const bottomKeyboard = new Keyboard()
 // ── Commands & Button Handlers ──
 
 bot.command("start", async (ctx) => {
+  try {
+    await ctx.setChatMenuButton({ type: "default" });
+  } catch (_) {}
+
   const text =
     `👋 *Halo, ${engine.escapeHtml(ctx.from?.first_name || "Sobat")}!*\n\n` +
     `Saya adalah bot pengunduh media serbaguna (*Universal Media Downloader*).\n\n` +
@@ -49,8 +53,6 @@ bot.command("start", async (ctx) => {
     `• Pilihan format video & audio (MP4 / MP3)\n` +
     `• Instant re-send via File ID Cache\n\n` +
     `Klik tombol menu di bawah untuk mulai!`;
-
-  const inlineKb = new InlineKeyboard().webApp("🚀 Buka Downloader", WEBAPP_URL);
 
   await ctx.reply(text, {
     parse_mode: "Markdown",
