@@ -343,9 +343,12 @@ function serveFile(res, filePath, contentType) {
       res.writeHead(404, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ error: "Not Found" }));
     } else {
+      const isMedia = contentType.startsWith("image/");
       res.writeHead(200, {
         "Content-Type": contentType,
-        "Cache-Control": "public, max-age=3600",
+        "Cache-Control": isMedia ? "public, max-age=86400" : "no-cache, no-store, must-revalidate",
+        "Pragma": "no-cache",
+        "Expires": "0",
       });
       res.end(content);
     }
