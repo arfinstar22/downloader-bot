@@ -57,9 +57,11 @@ bot.command("start", async (ctx) => {
   // Pesan 2 — fitur unggulan
   await ctx.reply(
     `⚡ *Apa yang bisa aku lakukan?*\n\n` +
-    `🎬  Unduh video & audio dari *30 platform* sekaligus:\n` +
+    `🎬  Unduh video & audio dari *${engine.PLATFORMS.length} platform* sekaligus:\n` +
     `    YouTube · TikTok · Instagram · Twitter/X · Spotify\n` +
+    `    MediaFire · Google Drive · Dailymotion · LinkedIn · Lemon8\n` +
     `    CapCut · Twitch Clips · SnackVideo · Vimeo · Bluesky\n` +
+    `    Pixeldrain · Mixcloud · Rumble · Gofile · Tumblr\n` +
     `    Streamable · Snapchat · Sfile · Deezer · Audiomack\n` +
     `    Likee · Loom · Tidal · Facebook · Pinterest · & lainnya\n\n` +
     `📤  File dikirim *langsung ke chat ini* — tidak perlu buka link eksternal\n` +
@@ -103,7 +105,7 @@ const sendHelp = async (ctx) => {
 
 const sendPlatforms = async (ctx) => {
   const list = engine.PLATFORMS.map((p) => `• ${p.label}`).join("\n");
-  const text = `🌐 *Platform yang Didukung (30 Platform):*\n\n${list}\n\nKirimkan link dari platform mana pun di atas atau buka Mini App!`;
+  const text = `🌐 *Platform yang Didukung (${engine.PLATFORMS.length} Platform):*\n\n${list}\n\nKirimkan link dari platform mana pun di atas atau buka Mini App!`;
   await ctx.reply(text, { parse_mode: "Markdown", reply_markup: getBottomKeyboard(ctx.chat.id) });
 };
 

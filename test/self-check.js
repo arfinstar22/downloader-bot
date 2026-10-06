@@ -35,6 +35,16 @@ const testUrls = [
   { url: "https://pixiv.net/artworks/123456", expectedId: "pixiv" },
   { url: "https://rednote.com/discovery/item/123", expectedId: "rednote" },
   { url: "https://terabox.com/s/123456", expectedId: "terabox" },
+  { url: "https://www.mediafire.com/file/abc123xyz/sample.zip/file", expectedId: "mediafire" },
+  { url: "https://drive.google.com/file/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/view", expectedId: "googledrive" },
+  { url: "https://www.dailymotion.com/video/xbixzvm", expectedId: "dailymotion" },
+  { url: "https://www.linkedin.com/posts/activity-1234567890/", expectedId: "linkedin" },
+  { url: "https://www.lemon8-app.com/lifestyle/item_734293817293", expectedId: "lemon8" },
+  { url: "https://pixeldrain.com/u/abc12345", expectedId: "pixeldrain" },
+  { url: "https://www.mixcloud.com/spartacus/party-time/", expectedId: "mixcloud" },
+  { url: "https://rumble.com/v1b538p-live-breaking-news.html", expectedId: "rumble" },
+  { url: "https://gofile.io/d/AbC123", expectedId: "gofile" },
+  { url: "https://staff.tumblr.com/post/123456789/announcement", expectedId: "tumblr" },
 ];
 
 for (const { url, expectedId } of testUrls) {

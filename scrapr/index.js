@@ -28,6 +28,16 @@ const audiomack = require("./lib/audiomack");
 const likee = require("./lib/likee");
 const loom = require("./lib/loom");
 const tidal = require("./lib/tidal");
+const mediafire = require("./lib/mediafire");
+const googledrive = require("./lib/googledrive");
+const dailymotion = require("./lib/dailymotion");
+const linkedin = require("./lib/linkedin");
+const lemon8 = require("./lib/lemon8");
+const pixeldrain = require("./lib/pixeldrain");
+const mixcloud = require("./lib/mixcloud");
+const rumble = require("./lib/rumble");
+const gofile = require("./lib/gofile");
+const tumblr = require("./lib/tumblr");
 
 module.exports = {
   bilibili,
@@ -60,5 +70,15 @@ module.exports = {
   likee,
   loom,
   tidal,
+  mediafire,
+  googledrive,
+  dailymotion,
+  linkedin,
+  lemon8,
+  pixeldrain,
+  mixcloud,
+  rumble,
+  gofile,
+  tumblr,
 };
 
