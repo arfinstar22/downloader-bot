@@ -527,19 +527,68 @@ http
     console.log(`🌐 Server aktif di port ${PORT} (Mini App & API ready)`);
   });
 
-// ── Start Bot ──
+// ── Graceful Shutdown ──
+let isShuttingDown = false;
+const gracefulShutdown = async (signal) => {
+  if (isShuttingDown) return;
+  isShuttingDown = true;
+  console.log(`\n🛑 Menerima sinyal ${signal}, menghentikan bot secara aman...`);
+  try {
+    await bot.stop();
+  } catch (_) {}
+  process.exit(0);
+};
 
-console.log("Menghubungkan bot ke Telegram...");
-bot.start({
-  onStart: async (info) => {
-    console.log(`✅ Bot @${info.username} berhasil berjalan!`);
+process.once("SIGINT", () => gracefulShutdown("SIGINT"));
+process.once("SIGTERM", () => gracefulShutdown("SIGTERM"));
+
+// ── Resilient Bot Polling with 409 Conflict Retry ──
+async function runBot() {
+  const maxRetries = 20;
+  const retryDelay = 5000;
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    if (isShuttingDown) break;
     try {
-      await bot.api.setChatMenuButton({
-        menu_button: {
-          type: "default",
+      console.log(`Menghubungkan bot ke Telegram (percobaan ${attempt}/${maxRetries})...`);
+
+      // Bersihkan webhook atau polling gantung sebelum mulai
+      try {
+        await bot.api.deleteWebhook({ drop_pending_updates: true });
+      } catch (_) {}
+
+      await bot.start({
+        drop_pending_updates: true,
+        onStart: async (info) => {
+          console.log(`✅ Bot @${info.username} berhasil berjalan!`);
+          try {
+            await bot.api.setChatMenuButton({
+              menu_button: {
+                type: "default",
+              },
+            });
+          } catch (_) {}
         },
       });
-    } catch (_) {}
-  },
-});
+      break;
+    } catch (err) {
+      if (isShuttingDown) break;
+      const isConflict =
+        err.error_code === 409 ||
+        (typeof err.message === "string" && err.message.includes("409"));
+
+      if (isConflict) {
+        console.warn(
+          `⚠️ 409 Conflict: Instance bot lama masih berjalan di Render (rolling deploy). Menunggu ${retryDelay / 1000}s sebelum coba lagi... (${attempt}/${maxRetries})`
+        );
+        await new Promise((r) => setTimeout(r, retryDelay));
+      } else {
+        console.error("❌ Error polling bot:", err.message || err);
+        await new Promise((r) => setTimeout(r, retryDelay));
+      }
+    }
+  }
+}
+
+runBot();
 
