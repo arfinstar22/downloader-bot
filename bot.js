@@ -58,12 +58,12 @@ bot.command("start", async (ctx) => {
   await ctx.reply(
     `⚡ *Apa yang bisa aku lakukan?*\n\n` +
     `🎬  Unduh video & audio dari *${engine.PLATFORMS.length} platform* sekaligus:\n` +
-    `    YouTube · TikTok · Instagram · Twitter/X · Spotify\n` +
-    `    MediaFire · Google Drive · Dailymotion · LinkedIn · Lemon8\n` +
-    `    CapCut · Twitch Clips · SnackVideo · Vimeo · Bluesky\n` +
-    `    Pixeldrain · Mixcloud · Rumble · Gofile · Tumblr\n` +
-    `    Streamable · Snapchat · Sfile · Deezer · Audiomack\n` +
-    `    Likee · Loom · Tidal · Facebook · Pinterest · & lainnya\n\n` +
+    `    YouTube · TikTok · Instagram · Facebook · Twitter/X\n` +
+    `    Spotify · Google Drive · Pinterest · CapCut · Snapchat\n` +
+    `    LinkedIn · Reddit · Threads · MediaFire · Apple Music\n` +
+    `    Twitch Clips · SoundCloud · Vimeo · Lemon8 · SnackVideo\n` +
+    `    Likee · Dailymotion · Tumblr · TeraBox · Sfile.mobi\n` +
+    `    Deezer · Tidal · Bluesky · Audiomack · Loom & lainnya\n\n` +
     `📤  File dikirim *langsung ke chat ini* — tidak perlu buka link eksternal\n` +
     `🚀  Re-send instan via cache jika link pernah diunduh sebelumnya\n` +
     `📦  Jika ukuran >48MB, bot otomatis kirim tombol *Download Langsung*`,

@@ -7,6 +7,7 @@ console.log("Running self-check...");
 const testUrls = [
   { url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ", expectedId: "youtube" },
   { url: "https://youtu.be/dQw4w9WgXcQ", expectedId: "youtube" },
+  { url: "https://www.youtube.com/playlist?list=PL123456", expectedId: "youtube" },
   { url: "https://www.tiktok.com/@user/video/1234567890", expectedId: "tiktok" },
   { url: "https://www.instagram.com/p/C-123456789/", expectedId: "instagram" },
   { url: "https://x.com/jack/status/20", expectedId: "twitter" },
