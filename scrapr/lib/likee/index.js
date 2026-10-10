@@ -116,4 +116,5 @@ async function scrape(url) {
   }
 }
 
-module.exports = { scrape };
+module.exports = { direct: scrape, scrape };
+

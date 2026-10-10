@@ -47,8 +47,9 @@
   const errorMessage = document.getElementById("errorMessage");
   const btnRetry = document.getElementById("btnRetry");
   const userNameEl = document.getElementById("userName");
+  const audioModeBadge = document.getElementById("audioModeBadge");
 
-  let selectedFormat = "mp4";
+  let selectedFormat = "hd";
   let detectedPlatform = null;
 
   // Resolve active Chat ID & User Info
@@ -110,6 +111,7 @@
     {
       id: "spotify",
       name: "Spotify",
+      isAudio: true,
       iconUrl: "/icon/spotify.png",
       pattern: /spotify\.com\//i,
       color: "#1DB954",
@@ -174,6 +176,7 @@
     {
       id: "applemusic",
       name: "Apple Music",
+      isAudio: true,
       iconUrl: "/icon/music.png",
       pattern: /music\.apple\.com\//i,
       color: "#FA243C",
@@ -188,6 +191,7 @@
     {
       id: "soundcloud",
       name: "SoundCloud",
+      isAudio: true,
       iconUrl: "/icon/soundcloud.png",
       pattern: /soundcloud\.com\//i,
       color: "#FF5500",
@@ -251,6 +255,7 @@
     {
       id: "deezer",
       name: "Deezer",
+      isAudio: true,
       iconUrl: "/icon/deezer.png",
       pattern: /(?:deezer\.com|deezer\.page\.link)/i,
       color: "#A238FF",
@@ -258,6 +263,7 @@
     {
       id: "tidal",
       name: "Tidal",
+      isAudio: true,
       iconUrl: "/icon/tidal.png",
       invert: true,
       pattern: /(?:tidal\.com|listen\.tidal\.com)/i,
@@ -273,6 +279,7 @@
     {
       id: "audiomack",
       name: "Audiomack",
+      isAudio: true,
       iconUrl: "/icon/audiomack-logo.png",
       pattern: /audiomack\.com\//i,
       color: "#FFA200",
@@ -287,6 +294,7 @@
     {
       id: "mixcloud",
       name: "Mixcloud",
+      isAudio: true,
       iconUrl: "/icon/mixcloud.png",
       pattern: /mixcloud\.com\//i,
       color: "#5000FF",
@@ -301,6 +309,7 @@
     {
       id: "bandcamp",
       name: "Bandcamp",
+      isAudio: true,
       iconUrl: "/icon/bandcamp.png",
       pattern: /bandcamp\.com\//i,
       color: "#629AA9",
@@ -395,12 +404,45 @@
       platformChip.setAttribute("data-platform", detectedPlatform.id);
       btnDownload.disabled = false;
 
+      // Jika platform audio murni (Spotify, Apple Music, Deezer, dll):
+      if (detectedPlatform.isAudio) {
+        selectedFormat = "mp3";
+        formatPills.forEach(p => {
+          const isMp3 = p.dataset.format === "mp3";
+          p.classList.toggle("active", isMp3);
+          p.setAttribute("aria-checked", isMp3 ? "true" : "false");
+          p.style.opacity = isMp3 ? "1" : "0.45";
+          p.style.pointerEvents = isMp3 ? "auto" : "none";
+        });
+        if (audioModeBadge) audioModeBadge.style.display = "flex";
+      } else {
+        formatPills.forEach(p => {
+          p.style.opacity = "1";
+          p.style.pointerEvents = "auto";
+        });
+        if (audioModeBadge) audioModeBadge.style.display = "none";
+        // Revert ke hd jika sebelumnya otomatis mp3 karena platform audio
+        if (selectedFormat === "mp3") {
+          selectedFormat = "hd";
+          formatPills.forEach(p => {
+            const isHd = p.dataset.format === "hd";
+            p.classList.toggle("active", isHd);
+            p.setAttribute("aria-checked", isHd ? "true" : "false");
+          });
+        }
+      }
+
       // Highlight in supported showcase
       document.querySelectorAll(".platform-badge").forEach(b => {
         b.classList.toggle("highlight", b.dataset.platform === detectedPlatform.id);
       });
     } else {
       detectionRow.style.display = "none";
+      if (audioModeBadge) audioModeBadge.style.display = "none";
+      formatPills.forEach(p => {
+        p.style.opacity = "1";
+        p.style.pointerEvents = "auto";
+      });
       btnDownload.disabled = true;
       document.querySelectorAll(".platform-badge").forEach(b => b.classList.remove("highlight"));
     }
@@ -476,7 +518,11 @@
 
     // Fallback: If no chatId detected but tg.sendData available, send data back to bot
     if (!targetUserId && tg && typeof tg.sendData === "function") {
-      tg.sendData(JSON.stringify({ url: rawUrl, format: selectedFormat }));
+      tg.sendData(JSON.stringify({
+        url: rawUrl,
+        format: selectedFormat === "mp3" ? "mp3" : "mp4",
+        quality: selectedFormat === "sd" ? "sd" : "hd"
+      }));
       return;
     }
 
@@ -499,12 +545,14 @@
         progressDetail.textContent = "File video/audio sedang diunggah ke chat bot kamu...";
       }, 3500);
 
+      const isMp3 = selectedFormat === "mp3";
       const res = await fetch("/api/download", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           url: rawUrl,
-          format: selectedFormat,
+          format: isMp3 ? "mp3" : "mp4",
+          quality: selectedFormat === "sd" ? "sd" : "hd",
           userId: targetUserId,
           initData: tg?.initData || ""
         }),

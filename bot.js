@@ -132,33 +132,65 @@ bot.hears("🏓 Ping", sendPing);
 
 // ── Unified Media Processor ──
 
-async function processMediaDownload(ctx, rawUrl, format = "mp4") {
+async function processMediaDownload(ctx, rawUrl, options = {}) {
   const platform = engine.detectPlatform(rawUrl);
   if (!platform) {
     throw new Error("Platform link tidak didukung atau format salah.");
   }
 
+  const isAudioPlatform = engine.isAudioPlatform(platform);
+  const optObj = typeof options === "string" ? { format: options } : options;
+  const requestedFormat = (optObj.format || (isAudioPlatform ? "mp3" : "mp4")).toLowerCase();
+  const requestedQuality = (optObj.quality || (requestedFormat === "sd" ? "sd" : "hd")).toLowerCase();
+  const isAudio = isAudioPlatform || requestedFormat === "mp3" || requestedFormat === "audio";
+
   // Khusus YouTube
   if (platform.id === "youtube") {
-    const result = await engine.downloadYouTubeVideo(rawUrl);
-    const safeTitle = (result.title || "YouTube Video").slice(0, 100);
-    if (format === "mp3") {
-      await ctx.replyWithAudio(new InputFile(result.filePath, `${safeTitle}.mp3`), {
-        caption: `🎵 ${result.title}`.slice(0, 1000),
-        title: result.title,
-      });
-    } else {
-      await ctx.replyWithVideo(new InputFile(result.filePath, `${safeTitle}.mp4`), {
-        caption: `▶️ ${result.title}`.slice(0, 1000),
-        supports_streaming: true,
-      });
+    const result = await engine.downloadYouTube(rawUrl, {
+      format: isAudio ? "mp3" : "mp4",
+      quality: requestedQuality,
+    });
+    const safeTitle = (result.title || "YouTube Media").slice(0, 100);
+    try {
+      if (isAudio) {
+        const extra = {
+          caption: `🎵 ${result.title}`.slice(0, 1000),
+          title: result.title,
+        };
+        if (result.thumbnailPath && fs.existsSync(result.thumbnailPath)) {
+          extra.thumbnail = new InputFile(result.thumbnailPath, "thumb.jpg");
+        }
+        await ctx.replyWithAudio(new InputFile(result.filePath, `${safeTitle}.mp3`), extra);
+
+        if (optObj.sendCoverPhoto !== false && result.thumbnailPath && fs.existsSync(result.thumbnailPath)) {
+          try {
+            await ctx.replyWithPhoto(new InputFile(result.thumbnailPath, "thumb.jpg"), {
+              caption: `🎨 Foto Album / Thumbnail: ${result.title}`.slice(0, 1000),
+            });
+          } catch (_) {}
+        }
+      } else {
+        const extra = {
+          caption: `▶️ ${result.title}`.slice(0, 1000),
+          supports_streaming: true,
+        };
+        if (result.thumbnailPath && fs.existsSync(result.thumbnailPath)) {
+          extra.thumbnail = new InputFile(result.thumbnailPath, "thumb.jpg");
+        }
+        await ctx.replyWithVideo(new InputFile(result.filePath, `${safeTitle}.mp4`), extra);
+      }
+    } finally {
+      try { if (result.filePath && fs.existsSync(result.filePath)) fs.unlinkSync(result.filePath); } catch (_) {}
+      try { if (result.thumbnailPath && fs.existsSync(result.thumbnailPath)) fs.unlinkSync(result.thumbnailPath); } catch (_) {}
     }
-    try { fs.unlinkSync(result.filePath); } catch {}
     return { title: result.title, platform: platform.label };
   }
 
   // Platform lain (TikTok, Instagram, Twitter, Spotify, dll)
-  const res = await engine.scrapeMedia(platform, rawUrl, { format });
+  const res = await engine.scrapeMedia(platform, rawUrl, {
+    format: isAudio ? "mp3" : "mp4",
+    quality: requestedQuality,
+  });
   if (!res || !res.status || !res.result) {
     throw new Error(res?.message || `Gagal mengambil media dari ${platform.label}.`);
   }
@@ -169,11 +201,35 @@ async function processMediaDownload(ctx, rawUrl, format = "mp4") {
     throw new Error("Tidak ditemukan media yang dapat diunduh untuk link ini.");
   }
 
-  const targetDownload = downloads[0];
-  await engine.sendMedia(ctx, targetDownload, title);
+  const targetDownload = engine.selectDownload(downloads, {
+    quality: requestedQuality,
+    format: isAudio ? "mp3" : "mp4",
+    isAudioOnly: isAudio,
+  });
+
+  if (!targetDownload) {
+    throw new Error("Tidak ditemukan link unduhan yang sesuai.");
+  }
+
+  const fallbackSd =
+    requestedQuality === "hd" && !isAudio
+      ? engine.selectDownload(downloads, { quality: "sd", format: "mp4" })
+      : null;
+
+  const coverUrl = engine.getCoverPhoto(res.result);
+
+  await engine.sendMedia(ctx, targetDownload, title, {
+    quality: requestedQuality,
+    coverUrl,
+    sendCoverPhoto: isAudio && optObj.sendCoverPhoto !== false,
+    performer: res.result.artist || undefined,
+    album: res.result.album || undefined,
+    duration: res.result.duration || undefined,
+    fallbackSdDownload: fallbackSd && fallbackSd.url !== targetDownload.url ? fallbackSd : null,
+  });
+
   return { title, platform: platform.label };
 }
-
 
 // ── URL Extraction & Platform Detection ──
 
@@ -201,67 +257,99 @@ bot.on("message:text", async (ctx) => {
     return;
   }
 
-  if (platform.id === "youtube") {
+  const isAudioPlatform = engine.isAudioPlatform(platform);
+
+  // Periksa apakah pengguna mengetikkan akhiran kualitas di chat (misal: "https://... mp3" atau "https://... sd")
+  const lowerText = text.toLowerCase();
+  let explicitQuality = null;
+  if (lowerText.includes(" mp3") || lowerText.includes(" audio") || lowerText.includes(" lagu")) {
+    explicitQuality = "mp3";
+  } else if (lowerText.includes(" sd") || lowerText.includes(" 360") || lowerText.includes(" 480")) {
+    explicitQuality = "sd";
+  } else if (lowerText.includes(" hd") || lowerText.includes(" 720") || lowerText.includes(" 1080")) {
+    explicitQuality = "hd";
+  }
+
+  // Jika platform musik (Spotify, Apple Music, Deezer, SoundCloud, Tidal, dll):
+  // Otomatis unduh audio musik + sertakan foto album!
+  if (isAudioPlatform) {
     const statusMsg = await ctx.reply(
-      `⏳ Sedang mengunduh video *${platform.label}*... Mohon tunggu sebentar.`,
+      `⏳ Sedang mengunduh lagu dari *${platform.label}*... Mohon tunggu sebentar.`,
       { parse_mode: "Markdown" }
     );
-
     try {
-      await processMediaDownload(ctx, rawUrl, "mp4");
+      await processMediaDownload(ctx, rawUrl, {
+        format: "mp3",
+        quality: "hd",
+        sendCoverPhoto: true,
+      });
       try { await ctx.api.deleteMessage(ctx.chat.id, statusMsg.message_id); } catch {}
     } catch (err) {
-      console.error("YouTube download error:", err.message);
-      const videoMatch = rawUrl.match(/(?:v=|youtu\.be\/)([^&?\s]{11})/i);
-      const videoId = videoMatch ? videoMatch[1] : "";
-      const fallbackKb = new InlineKeyboard()
-        .url("🌐 Download via Y2Mate", `https://www.y2mate.com/youtube/${videoId}`)
-        .row()
-        .url("⚡ Download via Cobalt", `https://cobalt.tools`);
-
+      console.error(`Download error [${platform.id}]:`, err.message);
       await ctx.api.editMessageText(
         ctx.chat.id,
         statusMsg.message_id,
-        `⚠️ Gagal mengirim video langsung (${err.message}).\n\nKamu bisa mengunduh lewat tombol di bawah:`,
-        { reply_markup: fallbackKb }
+        `⚠️ Terjadi kesalahan saat mengunduh musik dari *${platform.label}*: ${err.message}`,
+        { parse_mode: "Markdown" }
       );
     }
     return;
   }
 
-  // Platform langsung (TikTok, IG, Twitter, Spotify, dll)
-  const statusMsg = await ctx.reply(
-    `⏳ Sedang mengambil media dari *${platform.label}*...`,
-    { parse_mode: "Markdown" }
-  );
-
-  try {
-    await processMediaDownload(ctx, rawUrl, "mp4");
-    try {
-      await ctx.api.deleteMessage(ctx.chat.id, statusMsg.message_id);
-    } catch {}
-  } catch (err) {
-    console.error("Download error:", err);
-    await ctx.api.editMessageText(
-      ctx.chat.id,
-      statusMsg.message_id,
-      `⚠️ Terjadi kesalahan saat memproses media: ${err.message}`
+  // Jika user menyertakan kualitas di teks:
+  if (explicitQuality) {
+    const statusMsg = await ctx.reply(
+      `⏳ Sedang mengunduh *${platform.label}* (${explicitQuality.toUpperCase()})...`,
+      { parse_mode: "Markdown" }
     );
+    try {
+      await processMediaDownload(ctx, rawUrl, {
+        format: explicitQuality === "mp3" ? "mp3" : "mp4",
+        quality: explicitQuality,
+      });
+      try { await ctx.api.deleteMessage(ctx.chat.id, statusMsg.message_id); } catch {}
+    } catch (err) {
+      console.error(`Download error [${platform.id}]:`, err.message);
+      await ctx.api.editMessageText(
+        ctx.chat.id,
+        statusMsg.message_id,
+        `⚠️ Gagal mengunduh: ${err.message}`
+      );
+    }
+    return;
   }
+
+  // Untuk video: Tampilkan keyboard interaktif cerdas HD / SD / MP3
+  const stateId = engine.saveState({ url: rawUrl, platformId: platform.id });
+  const kb = new InlineKeyboard()
+    .text("🎬 Video HD (1080p/720p)", `fmt:${stateId}:hd`)
+    .row()
+    .text("📱 Video SD (Hemat Kuota)", `fmt:${stateId}:sd`)
+    .row()
+    .text("🎵 Audio Saja (MP3)", `fmt:${stateId}:mp3`);
+
+  await ctx.reply(
+    `🎯 *${platform.label} Terdeteksi!*\n\n` +
+    `Silakan pilih kualitas yang ingin kamu unduh:`,
+    {
+      reply_markup: kb,
+      parse_mode: "Markdown",
+    }
+  );
 });
 
-// ── Callback Query (Format Selection) ──
+// ── Callback Query (Quality & Format Selection) ──
 
 bot.on("callback_query:data", async (ctx) => {
   const data = ctx.callbackQuery.data;
 
   if (data.startsWith("fmt:")) {
-    const [, stateId, format] = data.split(":");
+    const [, stateId, formatOrQuality] = data.split(":");
     const state = engine.getState(stateId);
 
     if (!state) {
       await ctx.answerCallbackQuery({
-        text: "Sesi pemilihan format sudah kedaluwarsa. Kirim link ulang.",
+        text: "Sesi pemilihan kualitas sudah kedaluwarsa. Silakan kirim link ulang.",
         show_alert: true,
       });
       return;
@@ -273,17 +361,35 @@ bot.on("callback_query:data", async (ctx) => {
       return;
     }
 
-    await ctx.answerCallbackQuery({ text: `Memproses format ${format.toUpperCase()}...` });
+    const qualityLabel =
+      formatOrQuality === "mp3"
+        ? "Audio (MP3)"
+        : formatOrQuality === "sd"
+        ? "Video SD"
+        : "Video HD";
+
+    await ctx.answerCallbackQuery({ text: `Memproses ${qualityLabel}...` });
 
     try {
       await ctx.editMessageText(
-        `⏳ Mengambil YouTube (${format.toUpperCase()})...\nMohon tunggu beberapa detik.`
+        `⏳ Mengunduh *${platform.label}* (${qualityLabel})...\nMohon tunggu beberapa saat.`,
+        { parse_mode: "Markdown" }
       );
     } catch {}
 
     try {
-      const res = await engine.scrapeMedia(platform, state.url, { format });
-      if (!res || !res.status || !res.result) {
+      await processMediaDownload(ctx, state.url, {
+        format: formatOrQuality === "mp3" ? "mp3" : "mp4",
+        quality: formatOrQuality,
+        sendCoverPhoto: true,
+      });
+
+      // Bersihkan pesan status tombol setelah terkirim
+      try { await ctx.deleteMessage(); } catch {}
+      engine.deleteState(stateId);
+    } catch (err) {
+      console.error(`Callback download error [${platform.id}]:`, err.message);
+      if (platform.id === "youtube") {
         const videoMatch = state.url.match(/(?:v=|youtu\.be\/)([^&?\s]{11})/i);
         const videoId = videoMatch ? videoMatch[1] : "";
         const fallbackKb = new InlineKeyboard()
@@ -291,42 +397,17 @@ bot.on("callback_query:data", async (ctx) => {
           .row()
           .url("⚡ Download via Cobalt", `https://cobalt.tools`);
 
-        await ctx.editMessageText(
-          `⚠️ *Server Cloud Diblokir oleh Converter YouTube*\n\n` +
-          `Server cloud Render (AWS) terdeteksi dan diblokir oleh anti-bot pihak ketiga converter YouTube.\n\n` +
-          `👉 *Gunakan tombol di bawah untuk langsung download video ini di browser:*\n\n` +
-          `💡 *Info:* 16 platform lain (*TikTok, Instagram Reels, Twitter/X, Spotify*, dll) tidak diblokir dan langsung mengirimkan file video/audio ke chat. Silakan dicoba!`,
-          { reply_markup: fallbackKb, parse_mode: "Markdown" }
-        );
-        engine.deleteState(stateId);
-        return;
+        try {
+          await ctx.editMessageText(
+            `⚠️ Gagal mengunduh langsung dari YouTube (${err.message}).\n\nKamu bisa mengunduh lewat tombol alternatif di bawah:`,
+            { reply_markup: fallbackKb }
+          );
+        } catch {}
+      } else {
+        try {
+          await ctx.editMessageText(`⚠️ Gagal mengunduh: ${err.message}`);
+        } catch {}
       }
-
-      const downloads = engine.getDownloads(res.result);
-      if (downloads.length === 0) {
-        await ctx.editMessageText("❌ Link unduhan tidak ditemukan.");
-        engine.deleteState(stateId);
-        return;
-      }
-
-      const title = res.result.title || "YouTube Media";
-      await ctx.editMessageText(`⬇️ Mengirim ${format.toUpperCase()}: *${engine.escapeHtml(title)}*...`, {
-        parse_mode: "Markdown",
-      });
-
-      const target = downloads[0];
-      await engine.sendMedia(ctx, target, title);
-
-      // Clean up message
-      try {
-        await ctx.deleteMessage();
-      } catch {}
-      engine.deleteState(stateId);
-    } catch (err) {
-      console.error("YouTube process error:", err);
-      try {
-        await ctx.editMessageText(`⚠️ Gagal mengirim media: ${err.message}`);
-      } catch {}
       engine.deleteState(stateId);
     }
   }
@@ -344,7 +425,8 @@ bot.on("message:web_app_data", async (ctx) => {
   try {
     const data = JSON.parse(ctx.message.web_app_data.data);
     const rawUrl = data.url;
-    const format = data.format || "mp4";
+    const format = data.format || "hd";
+    const quality = data.quality || (format === "sd" ? "sd" : "hd");
     if (!rawUrl) return;
 
     const statusMsg = await ctx.reply("⏳ Memproses unduhan dari Mini App...", {
@@ -352,8 +434,11 @@ bot.on("message:web_app_data", async (ctx) => {
     });
 
     try {
-      await processMediaDownload(ctx, rawUrl, format);
-      // Auto-hapus notif pesan status & service notification 'Data from...' agar chat bersih
+      await processMediaDownload(ctx, rawUrl, {
+        format: format === "mp3" ? "mp3" : "mp4",
+        quality,
+        sendCoverPhoto: true,
+      });
       try { await ctx.api.deleteMessage(ctx.chat.id, statusMsg.message_id); } catch {}
       try { await ctx.deleteMessage(); } catch {}
     } catch (err) {
@@ -368,6 +453,7 @@ bot.on("message:web_app_data", async (ctx) => {
     console.error("web_app_data error:", err);
   }
 });
+
 
 // ── HTTP Server (Mini App + API + Health Check) ──
 
@@ -469,7 +555,7 @@ http
     if (req.method === "POST" && pathname === "/api/download") {
       try {
         const body = await parseJsonBody(req);
-        const { url: rawUrl, format = "mp4", userId, initData } = body;
+        const { url: rawUrl, format = "hd", quality, userId, initData } = body;
 
         if (!rawUrl) {
           res.writeHead(400, { "Content-Type": "application/json" });
@@ -508,7 +594,13 @@ http
           reply: (t, o) => bot.api.sendMessage(chatId, t, o),
         };
 
-        const result = await processMediaDownload(fakeCtx, rawUrl, format);
+        const effectiveQuality = quality || (format === "sd" ? "sd" : "hd");
+        const effectiveFormat = format === "mp3" || format === "audio" ? "mp3" : "mp4";
+        const result = await processMediaDownload(fakeCtx, rawUrl, {
+          format: effectiveFormat,
+          quality: effectiveQuality,
+          sendCoverPhoto: true,
+        });
 
         res.writeHead(200, { "Content-Type": "application/json" });
         return res.end(JSON.stringify({ success: true, title: result.title, platform: result.platform }));

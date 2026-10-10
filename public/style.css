@@ -473,8 +473,28 @@ body::after {
 
 .format-pills {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+@media (max-width: 380px) {
+  .format-pills {
+    grid-template-columns: 1fr;
+  }
+}
+
+.audio-mode-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  background: rgba(29, 185, 84, 0.12);
+  border: 1px solid rgba(29, 185, 84, 0.3);
+  color: #1DB954;
+  font-size: 12px;
+  font-weight: 600;
+  margin-top: 4px;
 }
 
 .format-pill {

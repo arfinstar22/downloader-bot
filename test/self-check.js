@@ -1,9 +1,10 @@
 const assert = require("assert");
 const engine = require("../lib/engine");
+const scrapr = require("../scrapr");
 
-console.log("Running self-check...");
+console.log("Running comprehensive self-check...");
 
-// 1. Platform Detection
+// 1. Platform Detection (all 40 platforms)
 const testUrls = [
   { url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ", expectedId: "youtube" },
   { url: "https://youtu.be/dQw4w9WgXcQ", expectedId: "youtube" },
@@ -55,26 +56,100 @@ for (const { url, expectedId } of testUrls) {
 }
 console.log(`✓ Platform detection tests passed (${testUrls.length}/${testUrls.length})`);
 
-// 2. State Store
+// 2. Audio Platform Categorization
+const audioPlatformIds = ["spotify", "applemusic", "deezer", "tidal", "soundcloud", "bandcamp", "mixcloud", "audiomack"];
+for (const id of audioPlatformIds) {
+  const p = engine.PLATFORMS.find((x) => x.id === id);
+  assert.ok(p, `Platform ${id} must exist`);
+  assert.strictEqual(engine.isAudioPlatform(p), true, `${id} must be recognized as audio platform`);
+}
+
+const videoPlatformIds = ["youtube", "tiktok", "instagram", "facebook", "twitter", "capcut"];
+for (const id of videoPlatformIds) {
+  const p = engine.PLATFORMS.find((x) => x.id === id);
+  assert.ok(p, `Platform ${id} must exist`);
+  assert.strictEqual(engine.isAudioPlatform(p), false, `${id} must NOT be recognized as audio platform`);
+}
+console.log("✓ Audio platform categorization tests passed");
+
+// 3. State Store
 const id = engine.saveState({ foo: "bar" });
 assert.strictEqual(engine.getState(id).foo, "bar");
 engine.deleteState(id);
 assert.strictEqual(engine.getState(id), undefined);
 console.log("✓ State store tests passed");
 
-// 3. getDownloads normalization
+// 4. getDownloads normalization
 assert.deepStrictEqual(engine.getDownloads({ downloads: [{ url: "u1" }] }), [{ url: "u1" }]);
 assert.deepStrictEqual(engine.getDownloads({ download: "u2", type: "video" }), [{ url: "u2", type: "video" }]);
 assert.deepStrictEqual(engine.getDownloads({ url: "u3" }), [{ url: "u3", type: "video" }]);
 assert.deepStrictEqual(engine.getDownloads(null), []);
 console.log("✓ getDownloads normalization tests passed");
 
-// 4. mediaType helper
+// 5. mediaType helper
 assert.strictEqual(engine.mediaType({ type: "video" }), "video");
 assert.strictEqual(engine.mediaType({ type: "mp4" }), "video");
 assert.strictEqual(engine.mediaType({ type: "mp3" }), "audio");
 assert.strictEqual(engine.mediaType({ type: "image" }), "photo");
+assert.strictEqual(engine.mediaType({ url: "https://example.com/song.mp3" }), "audio");
 console.log("✓ mediaType helper tests passed");
+
+// 6. selectDownload (Smart Quality & Music Prioritization)
+// Test A: Spotify mixed payload with cover image and audio track
+const spotifyDownloads = [
+  { type: "photo", quality: "cover", url: "https://example.com/album.jpg" },
+  { type: "audio", quality: "320kbps", url: "https://example.com/song.mp3" },
+];
+const chosenSpotify = engine.selectDownload(spotifyDownloads, { isAudioOnly: true });
+assert.strictEqual(chosenSpotify.type, "audio", "Spotify must select audio, not cover photo");
+assert.strictEqual(chosenSpotify.url, "https://example.com/song.mp3");
+
+// Test B: Video platform with HD and SD
+const videoDownloads = [
+  { type: "video", quality: "360p (SD)", url: "https://example.com/video_360.mp4" },
+  { type: "video", quality: "1080p (HD)", url: "https://example.com/video_1080.mp4" },
+];
+const chosenHd = engine.selectDownload(videoDownloads, { quality: "hd" });
+assert.strictEqual(chosenHd.quality, "1080p (HD)", "Should pick 1080p HD when requested");
+
+const chosenSd = engine.selectDownload(videoDownloads, { quality: "sd" });
+assert.strictEqual(chosenSd.quality, "360p (SD)", "Should pick 360p SD when requested");
+console.log("✓ selectDownload quality selector tests passed");
+
+// 7. getCoverPhoto extraction
+assert.strictEqual(
+  engine.getCoverPhoto({ thumbnail: "https://example.com/thumb.jpg" }),
+  "https://example.com/thumb.jpg"
+);
+assert.strictEqual(
+  engine.getCoverPhoto({ cover: "https://example.com/cover.jpg" }),
+  "https://example.com/cover.jpg"
+);
+assert.strictEqual(
+  engine.getCoverPhoto({
+    downloads: [
+      { type: "audio", url: "https://example.com/song.mp3" },
+      { type: "photo", url: "https://example.com/art.jpg" },
+    ],
+  }),
+  "https://example.com/art.jpg"
+);
+console.log("✓ getCoverPhoto tests passed");
+
+// 8. All 40 platforms in engine have valid callable methods
+for (const p of engine.PLATFORMS) {
+  assert.ok(p.module, `Platform module for ${p.id} must be defined`);
+  let hasWorkingMethod = false;
+  for (const m of p.methods) {
+    const fn = p.module[m] || p.module.direct || p.module.scrape;
+    if (typeof fn === "function") {
+      hasWorkingMethod = true;
+      break;
+    }
+  }
+  assert.ok(hasWorkingMethod, `Platform ${p.id} must have at least one working scraper function`);
+}
+console.log(`✓ All ${engine.PLATFORMS.length} platforms verified with callable methods`);
 
 console.log("All self-check tests passed successfully!");
 process.exit(0);
